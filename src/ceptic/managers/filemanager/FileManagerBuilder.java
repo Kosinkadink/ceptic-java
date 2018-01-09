@@ -1,5 +1,7 @@
 package ceptic.managers.filemanager;
 
+import java.io.IOException;
+
 public class FileManagerBuilder {
 
     private String _location;
@@ -7,7 +9,7 @@ public class FileManagerBuilder {
 
     public FileManagerBuilder() { }
 
-    public FileManager buildManager() throws FileManagerException {
+    public FileManager buildManager() throws FileManagerException, IOException {
         if (_location.isEmpty()) {
             throw new FileManagerException("location must be specified");
         }

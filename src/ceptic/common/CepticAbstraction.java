@@ -1,11 +1,12 @@
 package ceptic.common;
 
-import ceptic.managers.EndpointManager;
+import ceptic.managers.endpointmanager.EndpointManager;
 import ceptic.managers.filemanager.FileManager;
 import ceptic.managers.filemanager.FileManagerBuilder;
-import ceptic.managers.TerminalManager;
+import ceptic.managers.terminalmanager.TerminalManager;
 import ceptic.managers.filemanager.FileManagerException;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 public abstract class CepticAbstraction {
@@ -21,12 +22,19 @@ public abstract class CepticAbstraction {
         // put send_cache variable into dictionary
         varDict.put("send_cache", 409600);
         // initialize file manager
-        fileManager = new FileManagerBuilder().location(this.location).buildManager();
+        try {
+            fileManager = new FileManagerBuilder().location(this.location).buildManager();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         // initialize terminal manager
         terminalManager = new TerminalManager();
-        // initialize endpoint manager
-        endpointManager = new EndpointManager();
+        // create endpoint manager
+        endpointManager = createEndpointManager();
     }
+
+    // Return an endpoint manager
+    abstract EndpointManager createEndpointManager();
 
     /* Override to insert application-specific terminal commands */
     void addTerminalCommands() {}
