@@ -96,7 +96,7 @@ public class ResourceCreator {
 		return sslContext;
 	}
 	
-	private KeyManagerFactory loadKeyStore() throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, UnrecoverableKeyException, InvalidKeySpecException {
+	/*private KeyManagerFactory loadKeyStore() throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, UnrecoverableKeyException, InvalidKeySpecException {
 		//load client certificate
 		PemReader cr = new PemReader(new FileReader(Paths.get(certDir, "techtem_cert_client.pem").toString()));
 		PemObject co = cr.readPemObject();
@@ -167,5 +167,5 @@ public class ResourceCreator {
 		TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
 		tmf.init(ksKeys);
 		return tmf;
-	}	
+	}	*/
 }
