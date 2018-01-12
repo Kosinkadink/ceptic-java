@@ -1,6 +1,8 @@
 package ceptic.managers.certificatemanager;
 
-public class CertificateManagerException extends Exception {
+import ceptic.common.CepticException;
+
+public class CertificateManagerException extends CepticException {
 
     public CertificateManagerException(String message) {
         super(message);

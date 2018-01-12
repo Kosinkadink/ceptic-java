@@ -11,12 +11,6 @@ public class CertificateManagerBuilder {
     private String _verifyCert;
     private boolean _clientVerify = true;
 
-    // default locations
-    String defautlClientCert = "cert_client";
-    String defaultClientKey = "key_client";
-    String defaultServerCert = "cert_server";
-    String defaultServerKey = " key_server";
-
     public CertificateManagerBuilder() { }
 
     public CertificateManager buildClientManager() throws CertificateManagerException {
@@ -33,7 +27,7 @@ public class CertificateManagerBuilder {
             throw new CertificateManagerException("no verifyCert provided for client instance");
         }
         // otherwise, good to attempt to return new CertificateManager
-        return new CertificateManager(_fileManager, CertificateManager.CLIENT, _localCert, _localKey, _verifyCert);
+        return new CertificateManager(CertificateManager.CLIENT, _fileManager, _localCert, _localKey, _verifyCert, _clientVerify);
     }
 
     public CertificateManager buildServerManager() throws CertificateManagerException {
@@ -50,7 +44,7 @@ public class CertificateManagerBuilder {
             throw new CertificateManagerException("no localCert and/or no localKey provided for server instance");
         }
         // otherwise, good to attempt to return new CertificateManager
-        return new CertificateManager(_fileManager, CertificateManager.SERVER, _localCert, _localKey, _verifyCert);
+        return new CertificateManager(CertificateManager.SERVER, _fileManager, _localCert, _localKey, _verifyCert, _clientVerify);
     }
 
     public CertificateManagerBuilder fileManager(FileManager _fileManager) {

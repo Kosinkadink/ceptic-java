@@ -90,11 +90,11 @@ public class ResourceCreator {
 		return mainDir;
 	}
 	
-	public SSLContext createSSLContext() throws NoSuchAlgorithmException, KeyManagementException, UnrecoverableKeyException, KeyStoreException, CertificateException, IOException, InvalidKeySpecException {
+	/*public SSLContext createSSLContext() throws NoSuchAlgorithmException, KeyManagementException, UnrecoverableKeyException, KeyStoreException, CertificateException, IOException, InvalidKeySpecException {
 		SSLContext sslContext = SSLContext.getInstance("TLS");
 		sslContext.init(loadKeyStore().getKeyManagers(), loadTrustStore().getTrustManagers(), null);
 		return sslContext;
-	}
+	}*/
 	
 	/*private KeyManagerFactory loadKeyStore() throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, UnrecoverableKeyException, InvalidKeySpecException {
 		//load client certificate
