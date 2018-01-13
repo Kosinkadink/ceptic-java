@@ -58,19 +58,19 @@ public class FileManager {
         locations.put(key, actualLocation);
     }
 
-    // Add file location bindins to CEPtic implementation directory bindings, creating file if does not exist
+    // Add file location bindings to CEPtic implementation directory bindings, creating file if does not exist
     // In this case, no base key and no text is provided
     public void addFile(String key, String location) throws IOException {
         addFile(key, location, null, "");
     }
 
-    // Add file location bindins to CEPtic implementation directory bindings, creating file if does not exist
+    // Add file location bindings to CEPtic implementation directory bindings, creating file if does not exist
     // In this case, no base key is provided
     public void addFile(String key, String location, String text) throws IOException {
         addFile(key, location, null, text);
     }
 
-    // Add file location bindins to CEPtic implementation directory bindings, creating file if does not exist
+    // Add file location bindings to CEPtic implementation directory bindings, creating file if does not exist
     public void addFile(String key, String location, String baseKey, String text) throws IOException {
         String actualLocation = getActualLocation(key, location, baseKey);
         // if file does not exist, create it

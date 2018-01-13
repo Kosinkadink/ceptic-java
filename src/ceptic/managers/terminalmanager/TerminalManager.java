@@ -5,25 +5,28 @@ import java.util.Map;
 
 public class TerminalManager {
 
-    private Map<String, CommandMethod> endpointMap = new HashMap<>();
+    private Map<String, TerminalCommand> endpointMap = new HashMap<>();
 
     public TerminalManager() {}
 
-    // interface
-    interface CommandMethod {
-        Map method(Object data);
-    }
-
-    public void addCommand(String command, CommandMethod function) {
+    public void addCommand(String command, TerminalCommand function) {
         endpointMap.put(command, function);
     }
 
-    public CommandMethod getCommand(String command) {
+    public TerminalCommand getCommand(String command) {
         return endpointMap.getOrDefault(command, null);
     }
 
     public void removeCommand(String command) {
         endpointMap.remove(command);
+    }
+
+    public Map performInput(String input) {
+        if (input.isEmpty()) {
+            System.out.println("no input given");
+        }
+        String[] user_input = input.split("\\s+");
+        return endpointMap.get(user_input[0]).function(user_input);
     }
 
 }

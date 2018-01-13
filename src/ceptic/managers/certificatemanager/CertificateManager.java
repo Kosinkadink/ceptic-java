@@ -6,7 +6,6 @@ import org.bouncycastle.util.io.pem.PemReader;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManagerFactory;
 import javax.xml.bind.DatatypeConverter;
 import java.io.BufferedReader;
@@ -39,11 +38,12 @@ public class CertificateManager {
     private boolean clientVerify;
     private SSLContext context;
 
+    private String defaultPassword = "C3pt1c4daW1n";
     // default locations
-    String defaultClientCert = "cert_client";
-    String defaultClientKey = "key_client";
-    String defaultServerCert = "cert_server";
-    String defaultServerKey = " key_server";
+    private static String defaultClientCert = "cert_client";
+    private static String defaultClientKey = "key_client";
+    private static String defaultServerCert = "cert_server";
+    private static String defaultServerKey = " key_server";
 
     public CertificateManager(RequestType request, FileManager fileManager, String localCert, String localKey, String verifyCert, boolean clientVerify) {
         this.fileManager = fileManager;
@@ -157,17 +157,14 @@ public class CertificateManager {
         KeyFactory kf = KeyFactory.getInstance("RSA");
         PrivateKey privkey = kf.generatePrivate(keySpec);
 
-        //most secure of passwords
-        String password = "TechTemRul35";
-
         //set up KeyStore
         KeyStore ksKeys = KeyStore.getInstance("JKS");
-        ksKeys.load(null, password.toCharArray());
+        ksKeys.load(null, defaultPassword.toCharArray());
         ksKeys.setCertificateEntry("ClientCert", cert);
-        ksKeys.setKeyEntry("ClientKey",privkey,password.toCharArray(),new Certificate[]{cert});
+        ksKeys.setKeyEntry("ClientKey",privkey,defaultPassword.toCharArray(),new Certificate[]{cert});
         //set up KeyManagerFactory
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        kmf.init(ksKeys,password.toCharArray());
+        kmf.init(ksKeys,defaultPassword.toCharArray());
         return kmf;
     }
 
@@ -179,12 +176,10 @@ public class CertificateManager {
         ByteArrayInputStream incert = new ByteArrayInputStream(co.getContent());
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         Certificate cert = cf.generateCertificate(incert);
-        //most secure of passwords
-        String password = "TechTemRul35";
 
         //set up TrustStore
         KeyStore ksKeys = KeyStore.getInstance("JKS");
-        ksKeys.load(null, password.toCharArray());
+        ksKeys.load(null, defaultPassword.toCharArray());
         ksKeys.setCertificateEntry("ClientCert", cert);
         //set up TrustManagerFactory
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());

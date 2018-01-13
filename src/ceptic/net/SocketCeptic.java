@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -20,14 +21,11 @@ import ceptic.fileIO.ResourceCreator;
 
 
 public class SocketCeptic {
-	private String host;
-	private int port;
-	private ResourceCreator rc;
 	private Socket s;
 	private InputStream sin;
 	private OutputStream sout;
 	
-	public SocketCeptic(String host, int port, ResourceCreator rc) throws UnknownHostException, IOException {
+	/*public SocketCeptic(String host, int port, ResourceCreator rc) throws UnknownHostException, IOException {
 		//initialize socket
 		this.host = host;
 		this.port = port;
@@ -39,11 +37,30 @@ public class SocketCeptic {
 			e.printStackTrace();
 			throw new RuntimeException("SocketTem could not be initialized");
 		}
+	}*/
+
+	public SocketCeptic(Socket socket) {
+		s = socket;
+		try {
+			sin = s.getInputStream();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		try {
+			sout = s.getOutputStream();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		try {
+			s.setTcpNoDelay(true);
+		} catch (SocketException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void createSocket() throws UnknownHostException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, InvalidKeySpecException {
 		//s = new Socket(host,port);
-		s = rc.createSSLContext().getSocketFactory().createSocket(host,port);
+		//s = rc.createSSLContext().getSocketFactory().createSocket(host,port);
 		sin = s.getInputStream();
 		sout = s.getOutputStream();
 		s.setTcpNoDelay(true);
