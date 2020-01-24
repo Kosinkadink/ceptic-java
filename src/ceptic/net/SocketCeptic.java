@@ -17,8 +17,6 @@ import java.security.spec.InvalidKeySpecException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 
-import ceptic.fileIO.ResourceCreator;
-
 
 public class SocketCeptic {
 	private Socket s;
@@ -38,8 +36,10 @@ public class SocketCeptic {
 			throw new RuntimeException("SocketTem could not be initialized");
 		}
 	}*/
+	public SocketCeptic() { }
 
 	public SocketCeptic(Socket socket) {
+
 		s = socket;
 		try {
 			sin = s.getInputStream();
@@ -57,6 +57,10 @@ public class SocketCeptic {
 			e.printStackTrace();
 		}
 	}
+
+	public SocketCeptic wrapSocket() {
+		return null;
+	}
 	
 	public void createSocket() throws UnknownHostException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, InvalidKeySpecException {
 		//s = new Socket(host,port);
@@ -66,83 +70,86 @@ public class SocketCeptic {
 		s.setTcpNoDelay(true);
 	}
 	
-	public int send(String msg) throws IOException {
+	public void send(String msg) throws SocketCepticException {
 		byte[] byteBuffer;
 		byteBuffer = msg.getBytes();
-		return send(byteBuffer);
-	}
-	
-	public int sendall(String msg) throws IOException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
-		return send(msg);
-	}
-	
-	public int send(byte[] msg) throws IOException {
-		//create string with length of message
-		byte[] total_size = String.format("%16s", Integer.toString(msg.length)).getBytes();
-		sout.write(total_size);
-		sout.write(msg);
-		return 0;
-	}
-	
-	public int sendall(byte[] msg) throws IOException {
-		return send(msg);
+		send(byteBuffer);
 	}
 
-	public byte[] recvBytes(int bytes) throws IOException {
+	public void send(byte[] msg) throws SocketCepticException {
+		//create string with length of message
+		byte[] total_size = String.format("%16s", Integer.toString(msg.length)).getBytes();
+		sendRaw(total_size);
+		sendRaw(msg);
+	}
+
+	public void sendall(String msg) throws SocketCepticException {
+		send(msg);
+	}
+
+	public void sendall(byte[] msg) throws SocketCepticException {
+		send(msg);
+	}
+
+	public void sendRaw(byte[] msg) throws SocketCepticException {
+		try {
+			sout.write(msg);
+		}
+		catch (IOException e) {
+			throw new SocketCepticException(e.toString());
+		}
+	}
+
+	public byte[] recvRaw(int bytes) throws SocketCepticException {
 		int charCount = 0;
 		int totalCount = 0;
-		byte[] byteBuffer;
-		//get length of bytes
-		byteBuffer = new byte[16];
-		while (totalCount < 16) {
+		byte[] byteBuffer = new byte[bytes];
+		while (totalCount < bytes) {
 			try {
-				charCount = sin.read(byteBuffer,charCount,16-totalCount);
+				charCount = sin.read(byteBuffer,charCount,bytes-totalCount);
 			}
 			catch (IOException e) {
-				break;
-			}
-			totalCount += charCount;
-		}
-		int bytes_to_recv = Integer.parseInt(new String(byteBuffer).replaceAll("\\D", ""));
-		//reset charCount and totalCount
-		charCount = 0;
-		totalCount = 0;
-		int actualBytes = bytes;
-		if (actualBytes > bytes_to_recv) {
-			actualBytes = bytes_to_recv;
-		}
-		byteBuffer = new byte[actualBytes];
-		while (totalCount < actualBytes) {
-			try {
-				charCount = sin.read(byteBuffer,charCount,actualBytes-totalCount);
-			}
-			catch (IOException e) {
-				break;
+				throw new SocketCepticException(e.toString());
 			}
 			totalCount += charCount;
 			if (charCount == 0) {
 				break;
 			}
 		}
-
 		return byteBuffer;
 	}
-	
-	public String recvString(int bytes) throws IOException {
-		String data;
-		byte[] byteBuffer = recvBytes(bytes);
-		data = new String(byteBuffer);
 
-		return data;
+	public String recvRawString(int bytes) throws SocketCepticException {
+		return new String(recvRaw(bytes));
+	}
+
+	public byte[] recvBytes(int bytes) throws SocketCepticException {
+		byte[] sizeBuffer;
+		// get length of bytes
+		sizeBuffer = recvRaw(16);
+		int sizeToRecv = Integer.parseInt(new String(sizeBuffer).replaceAll("\\D", ""));
+		int amount = bytes;
+		if (sizeToRecv < amount) {
+			amount = sizeToRecv;
+		}
+		return recvRaw(amount);
+	}
+	
+	public String recvString(int bytes) throws SocketCepticException {
+		return new String(recvBytes(bytes));
 	}
 		
 	public Socket getSocket() {
 		return s;
 	}
 	
-	public int close() throws IOException {
-		s.close();
-		return 0;
+	public void close() throws SocketCepticException {
+		try {
+			s.close();
+		}
+		catch (IOException e) {
+			throw new SocketCepticException(e.toString());
+		}
 	}
 	
 }
