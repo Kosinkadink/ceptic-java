@@ -1,6 +1,6 @@
-package ceptic.net;
+package ceptic.net.exceptions;
 
-import ceptic.common.CepticException;
+import ceptic.common.exceptions.CepticException;
 
 public class SocketCepticException extends CepticException {
 

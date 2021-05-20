@@ -10,9 +10,9 @@ public class CepticServerBuilder {
 
     public CepticServerBuilder() { }
 
-    public CepticServer buildServer() {
+    public CepticServer build() {
         if (_settings == null) {
-            _settings = new ServerSettingsBuilder().buildSettings();
+            _settings = new ServerSettingsBuilder().build();
         }
         return new CepticServer(_settings, _certfile, _keyfile, _cafile, _secure);
     }

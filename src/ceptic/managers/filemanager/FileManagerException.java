@@ -1,6 +1,6 @@
 package ceptic.managers.filemanager;
 
-import ceptic.common.CepticException;
+import ceptic.common.exceptions.CepticException;
 
 public class FileManagerException extends CepticException {
 

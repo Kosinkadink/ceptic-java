@@ -16,7 +16,7 @@ public class ClientSettingsBuilder {
 
     public ClientSettingsBuilder() { }
 
-    public ClientSettings buildSettings() {
+    public ClientSettings build() {
         // TODO: add verification for settings
         return new ClientSettings(_version, _headersMinSize, _headersMaxSize, _frameMinSize, _frameMaxSize,
                 _bodyMax, _streamMinTimeout, _streamTimeout, _sendBufferSize, _readBufferSize, 9000);

@@ -1,0 +1,31 @@
+package ceptic.stream.iteration;
+
+import ceptic.stream.StreamFrame;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
+import java.util.UUID;
+
+public class DataStreamFrameGenerator implements Iterable<StreamFrame> {
+
+    protected final UUID streamId;
+    protected byte[] data;
+    protected boolean isFirstHeader;
+    protected boolean isResponse;
+    protected final int frameSize;
+
+
+    public DataStreamFrameGenerator(UUID streamId, byte[] data, int frameSize, boolean isFirstHeader, boolean isResponse) {
+        this.streamId = streamId;
+        this.data = data;
+        this.frameSize = frameSize;
+        this.isFirstHeader = isFirstHeader;
+        this.isResponse = isResponse;
+    }
+
+    @Override
+    public Iterator<StreamFrame> iterator() {
+        return new DataStreamFrameGeneratorIterator(this);
+    }
+
+}

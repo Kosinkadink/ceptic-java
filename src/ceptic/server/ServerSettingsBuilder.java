@@ -19,7 +19,7 @@ public class ServerSettingsBuilder {
 
     public ServerSettingsBuilder() { }
 
-    public ServerSettings buildSettings() {
+    public ServerSettings build() {
         // TODO: add verification for settings
         return new ServerSettings(_port, _version, _headersMinSize, _headersMaxSize, _frameMinSize, _frameMaxSize,
                 _bodyMax, _streamMinTimeout, _streamTimeout, _sendBufferSize, _readBufferSize, _handlerMaxCount,

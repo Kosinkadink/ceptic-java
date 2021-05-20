@@ -1,4 +1,4 @@
-package ceptic.common;
+package ceptic.common.exceptions;
 
 public class CepticException extends Exception {
 

@@ -18,7 +18,7 @@ public class ServerSettings {
     public boolean verbose;
 
 
-    public ServerSettings(int port, String version, int headersMinSize, int headersMaxSize, int frameMinSize,
+    protected ServerSettings(int port, String version, int headersMinSize, int headersMaxSize, int frameMinSize,
                           int frameMaxSize, int bodyMax, int streamMinTimeout, int streamTimeout,
                           int sendBufferSize, int readBufferSize, int handlerMaxCount, int requestQueueSize,
                           boolean verbose) {

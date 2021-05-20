@@ -4,6 +4,7 @@ import ceptic.managers.filemanager.FileManager;
 
 public class CertificateManagerBuilder {
 
+    // TODO: update to match present version of ceptic
     private FileManager _fileManager = null;
     // fields for storing actual locations to use
     private String _localCert;

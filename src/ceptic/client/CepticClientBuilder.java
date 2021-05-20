@@ -6,14 +6,14 @@ public class CepticClientBuilder {
     private String _certfile;
     private String _keyfile;
     private String _cafile;
-    private boolean _checkHostname;
+    private boolean _checkHostname = true;
     private boolean _secure = true;
 
     public CepticClientBuilder() { }
 
-    public CepticClient buildClient() {
+    public CepticClient build() {
         if (_settings == null) {
-            _settings = new ClientSettingsBuilder().buildSettings();
+            _settings = new ClientSettingsBuilder().build();
         }
         return new CepticClient(_settings, _certfile, _keyfile, _cafile, _checkHostname, _secure);
     }

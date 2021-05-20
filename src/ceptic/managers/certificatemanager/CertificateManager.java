@@ -26,6 +26,7 @@ public class CertificateManager {
     public interface RequestType {
         String request = null;
     }
+    // TODO: update to match present version of ceptic
 
     public static RequestType SERVER = new RequestType() { String request = "__SERVER"; };
     public static RequestType CLIENT = new RequestType() { String request = "__CLIENT"; };

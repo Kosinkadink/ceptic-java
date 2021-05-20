@@ -15,7 +15,7 @@ public class ClientSettings {
     public int defaultPort;
 
 
-    public ClientSettings(String version, int headersMinSize, int headersMaxSize, int frameMinSize,
+    protected ClientSettings(String version, int headersMinSize, int headersMaxSize, int frameMinSize,
                           int frameMaxSize, int bodyMax, int streamMinTimeout, int streamTimeout,
                           int sendBufferSize, int readBufferSize, int defaultPort) {
         this.version = version;
