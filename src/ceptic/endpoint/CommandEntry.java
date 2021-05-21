@@ -1,5 +1,6 @@
 package ceptic.endpoint;
 
+import ceptic.common.RegexHelper;
 import ceptic.endpoint.exceptions.EndpointManagerException;
 import ceptic.server.ServerSettings;
 
@@ -32,8 +33,7 @@ public class CommandEntry {
     private static final Pattern badBracesRegex = Pattern.compile(
             "<[^>]*<|>[^<]*>|<[^>]+$|^[^<]+>|<>|<$|<([^/][^>]*/[^/][^>]*)+>|><|>[^/]+|/[^/]+< ");
     private static final Pattern bracesRegex = Pattern.compile("<([^>]*)>"); // find variables in endpoint
-    private static final String replacementRegexString = "[!-\\.0-~]+";
-    private static final String groupFormatString = "(?<%s>%s)";
+    private static final String replacementRegexString = "([!-\\.0-~]+)";
     //endregion
 
     public CommandEntry(String command, CommandSettings settings) {
@@ -94,14 +94,15 @@ public class CommandEntry {
             }
         }
         // if nothing found, endpoint doesn't exist
-        if (matcher == null) {
+        if (match == null) {
             throw new EndpointManagerException(String.format("endpoint '%s' cannot be found for command '%s", endpoint, command));
         }
         // get endpoint variables values from matcher and fill out HashMap
         HashMap<String,String> values = new HashMap<>();
-        assert match != null;
-        for (String group : match.getValue().getVariables()) {
-            values.put(group, matcher.group(group));
+        int index = 1;
+        for (String variableName : match.getValue().getVariables()) {
+            values.put(variableName, matcher.group(index));
+            index++;
         }
         return new EndpointValue(match.getValue().getEntry(), values);
     }
@@ -141,7 +142,7 @@ public class CommandEntry {
         // check if variables exist in endpoint, and if so store their names and replace by regex
         Matcher bracesMatcher = bracesRegex.matcher(endpoint);
         // escape unsafe characters in endpoint
-        endpoint = Pattern.quote(endpoint);
+        endpoint = RegexHelper.escape(endpoint);
         List<String> variableNames = new ArrayList<>();
         while (bracesMatcher.find()) {
             // check if found variable is valid
@@ -160,11 +161,10 @@ public class CommandEntry {
         // replace variables in endpoint with regex
         for (String variableName : variableNames) {
             // add braces to either side of variable name
-            String safeBraces = Pattern.quote(Pattern.quote(String.format("<%s>", variableName)));
+            String safeBraces = RegexHelper.escape(String.format("<%s>", variableName), 2);
             // variable contained in braces '<variable>' acts as the string to substitute;
             // regex statement is put in its place for usage when looking up proper endpoint
-            String replaceString = String.format(groupFormatString, variableName, replacementRegexString);
-            endpoint = Pattern.compile(safeBraces).matcher(endpoint).replaceFirst(replaceString);
+            endpoint = Pattern.compile(safeBraces).matcher(endpoint).replaceFirst(replacementRegexString);
         }
         // add regex to make sure beginning and end of string will be included
         endpoint = String.format("^%s$", endpoint);

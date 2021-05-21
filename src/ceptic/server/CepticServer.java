@@ -3,6 +3,10 @@ package ceptic.server;
 import ceptic.common.*;
 import ceptic.encode.EncodeGetter;
 import ceptic.encode.exceptions.UnknownEncodingException;
+import ceptic.endpoint.EndpointEntry;
+import ceptic.endpoint.EndpointManager;
+import ceptic.endpoint.EndpointValue;
+import ceptic.endpoint.exceptions.EndpointManagerException;
 import ceptic.net.SocketCeptic;
 import ceptic.net.exceptions.SocketCepticException;
 import ceptic.stream.StreamHandler;
@@ -27,7 +31,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 public class CepticServer extends Thread implements RemovableManagers {
 
-    private final ServerSettings settings;
+    protected final ServerSettings settings;
     private final String certFile;
     private final String keyFile;
     private final String caFile;
@@ -36,9 +40,11 @@ public class CepticServer extends Thread implements RemovableManagers {
     private boolean shouldStop = false;
     private boolean stopped = false;
 
-    private final ConcurrentHashMap<UUID, StreamManager> managers = new ConcurrentHashMap<>();
+    protected final EndpointManager endpointManager;
 
-    private final ThreadPoolExecutor executor;
+    protected final ConcurrentHashMap<UUID, StreamManager> managers = new ConcurrentHashMap<>();
+
+    protected final ThreadPoolExecutor executor;
 
     protected CepticServer(ServerSettings settings, String certFile, String keyFile, String caFile, boolean secure) {
         this.settings = settings;
@@ -48,6 +54,8 @@ public class CepticServer extends Thread implements RemovableManagers {
         this.secure = secure;
         // create executor
         executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+        // create endpoint manager
+        endpointManager = new EndpointManager(this.settings);
     }
 
     //region Getters
@@ -159,6 +167,16 @@ public class CepticServer extends Thread implements RemovableManagers {
     }
     //endregion
 
+    //region Add Behavior
+    public void addCommand(String command) {
+        endpointManager.addCommand(command);
+    }
+
+    public void addRoute(String command, String endpoint, EndpointEntry entry) throws EndpointManagerException {
+        endpointManager.addEndpoint(command, endpoint, entry);
+    }
+    //endregion
+
     //region Connection
     public void handleNewConnection(StreamHandler stream) throws StreamException {
         // store errors in request
@@ -176,13 +194,19 @@ public class CepticServer extends Thread implements RemovableManagers {
                     Constants.ENDPOINT_LENGTH, request.getEndpoint().length()));
         }
         // if no errors yet, get endpoint from endpoint manager
+        EndpointValue endpointValue = null;
         if (errors.isEmpty()) {
-            // TODO: fill out endpoint manager stuff
-            // check that headers are valid
-            errors.addAll(checkNewConnectionHeaders(request));
+            try {
+                // get endpoint value from endpoint manager
+                endpointValue = endpointManager.getEndpoint(request.getCommand(), request.getEndpoint());
+                // check that headers are valid
+                errors.addAll(checkNewConnectionHeaders(request));
+            } catch (EndpointManagerException e) {
+                errors.add(e.toString());
+            }
         }
-        // if errors, send CepticResponse with BadRequest
-        if (!errors.isEmpty()) {
+        // if errors or no endpointValue found, send CepticResponse with BadRequest
+        if (!errors.isEmpty() || endpointValue == null) {
             stream.sendResponse(new CepticResponse(CepticStatusCode.BAD_REQUEST, errors));
             stream.sendClose();
             return;
@@ -208,8 +232,8 @@ public class CepticServer extends Thread implements RemovableManagers {
         }
         // set request stream
         request.setStream(stream);
-        // TODO: perform endpoint function and get back response
-        CepticResponse response = new CepticResponse(CepticStatusCode.OK);
+        // perform endpoint function and get back response
+        CepticResponse response = endpointValue.executeEndpointEntry(request);
         // send response
         stream.sendResponse(response);
         // send body if content length header present

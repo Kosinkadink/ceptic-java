@@ -1,20 +1,6 @@
 package ceptic.common;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class CepticStatusCode {
-//    OK(200),
-//    CREATED(201),
-//    NO_CONTENT(204),
-//    NOT_MODIFIED(304),
-//    BAD_REQUEST(400),
-//    UNAUTHORIZED(401),
-//    FORBIDDEN(403),
-//    NOT_FOUND(404),
-//    CONFLICT(409),
-//    INTERNAL_SERVER_ERROR(500),
-//    LOCAL_ERROR(600);
     public static final CepticStatusCode OK = new CepticStatusCode(200);
     public static final CepticStatusCode CREATED = new CepticStatusCode(201);
     public static final CepticStatusCode NO_CONTENT = new CepticStatusCode(204);

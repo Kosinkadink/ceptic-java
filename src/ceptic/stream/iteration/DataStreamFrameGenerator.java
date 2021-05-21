@@ -2,7 +2,6 @@ package ceptic.stream.iteration;
 
 import ceptic.stream.StreamFrame;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.UUID;
 
@@ -18,7 +17,7 @@ public class DataStreamFrameGenerator implements Iterable<StreamFrame> {
     public DataStreamFrameGenerator(UUID streamId, byte[] data, int frameSize, boolean isFirstHeader, boolean isResponse) {
         this.streamId = streamId;
         this.data = data;
-        this.frameSize = frameSize;
+        this.frameSize = frameSize / 2; // cut in half for generator to account for possible encoding size increase
         this.isFirstHeader = isFirstHeader;
         this.isResponse = isResponse;
     }
