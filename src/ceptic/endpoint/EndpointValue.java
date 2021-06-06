@@ -9,14 +9,16 @@ public class EndpointValue {
 
     private final EndpointEntry entry;
     private final HashMap<String,String> values;
+    private final CommandSettings settings;
 
-    public EndpointValue(EndpointEntry entry, HashMap<String,String> values) {
+    public EndpointValue(EndpointEntry entry, HashMap<String,String> values, CommandSettings settings) {
         this.entry = entry;
         if (values != null) {
             this.values = values;
         } else {
             this.values = new HashMap<>();
         }
+        this.settings = settings;
     }
 
     public EndpointEntry getEntry() {
@@ -25,6 +27,10 @@ public class EndpointValue {
 
     public HashMap<String, String> getValues() {
         return values;
+    }
+
+    public CommandSettings getSettings() {
+        return settings;
     }
 
     public CepticResponse executeEndpointEntry(CepticRequest request) {

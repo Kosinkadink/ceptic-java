@@ -3,6 +3,7 @@ package ceptic.server;
 import ceptic.common.*;
 import ceptic.encode.EncodeGetter;
 import ceptic.encode.exceptions.UnknownEncodingException;
+import ceptic.endpoint.CommandSettings;
 import ceptic.endpoint.EndpointEntry;
 import ceptic.endpoint.EndpointManager;
 import ceptic.endpoint.EndpointValue;
@@ -104,15 +105,6 @@ public class CepticServer extends Thread implements RemovableManagers {
             stopRunning();
             return;
         }
-        // bind address
-        try {
-            serverSocket.bind(new InetSocketAddress("", serverSocket.getLocalPort()));
-        } catch (IOException e) {
-            if (settings.verbose)
-                System.out.println("Issue binding ServerSocket address: " + e);
-            stopRunning();
-            return;
-        }
         while (!shouldStop) {
             Socket socket;
             // accept socket
@@ -172,8 +164,16 @@ public class CepticServer extends Thread implements RemovableManagers {
         endpointManager.addCommand(command);
     }
 
+    public void addCommand(String command, CommandSettings settings) {
+        endpointManager.addCommand(command, settings);
+    }
+
     public void addRoute(String command, String endpoint, EndpointEntry entry) throws EndpointManagerException {
         endpointManager.addEndpoint(command, endpoint, entry);
+    }
+
+    public void addRoute(String command, String endpoint, EndpointEntry entry, CommandSettings settings) throws EndpointManagerException {
+        endpointManager.addEndpoint(command, endpoint, entry, settings);
     }
     //endregion
 

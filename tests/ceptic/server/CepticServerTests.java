@@ -3,10 +3,11 @@ package ceptic.server;
 import ceptic.common.CepticResponse;
 import ceptic.common.CepticStatusCode;
 import ceptic.endpoint.EndpointEntry;
+import ceptic.endpoint.EndpointValue;
+import ceptic.endpoint.exceptions.EndpointManagerException;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CepticServerTests {
 
@@ -38,7 +39,7 @@ public class CepticServerTests {
     }
 
     @Test
-    void addRoute() {
+    void addRoute() throws EndpointManagerException {
         // Arrange
         CepticServer server = createNonSecureServer();
         String command = "get";
@@ -46,7 +47,11 @@ public class CepticServerTests {
         EndpointEntry entry = (request, values) -> new CepticResponse(CepticStatusCode.OK);
         server.addCommand(command);
         // Act and Assert
-        assertDoesNotThrow(() -> server.addRoute(command, endpoint, entry));
+        assertDoesNotThrow(() -> server.addRoute(command, endpoint, entry), "Exception thrown for addRoute");
+        assertDoesNotThrow(() -> server.endpointManager.getEndpoint(command, endpoint),
+                "Endpoint erroneously does not exist");
+        EndpointValue value = server.endpointManager.getEndpoint(command, endpoint);
+        assertTrue(value.getValues().isEmpty(), "Variables were present when none expected for endpoint");
     }
 
 }

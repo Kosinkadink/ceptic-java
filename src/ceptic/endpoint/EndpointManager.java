@@ -40,12 +40,24 @@ public class EndpointManager {
     }
 
     public void addEndpoint(String command, String endpoint, EndpointEntry entry) throws EndpointManagerException {
+        addEndpoint(command, endpoint, entry, null);
+    }
+
+    public void addEndpoint(String command, String endpoint, EndpointEntry entry, CommandSettings settings) throws EndpointManagerException {
         CommandEntry commandEntry = getCommand(command);
         if (commandEntry != null) {
-            commandEntry.addEndpoint(endpoint, entry);
+            commandEntry.addEndpoint(endpoint, entry, settings);
         } else {
             throw new EndpointManagerException(String.format("command '%s' not found", command));
         }
+    }
+
+    public EndpointSaved removeEndpoint(String command, String endpoint) {
+        CommandEntry commandEntry = getCommand(command);
+        if (commandEntry != null) {
+            return commandEntry.removeEndpoint(endpoint);
+        }
+        return null;
     }
 
 }

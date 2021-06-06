@@ -112,7 +112,7 @@ public class CepticRequest extends CepticHeaders {
         // extract request components from url
         String[] components = url.split("/",2);
         // set endpoint
-        if (components.length < 2) {
+        if (components.length < 2 || components[1].isEmpty()) {
             endpoint = "/";
         } else {
             endpoint = components[1];

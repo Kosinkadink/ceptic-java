@@ -55,14 +55,25 @@ public class CommandEntry {
     }
 
     public void addEndpoint(String endpoint, EndpointEntry entry) throws EndpointManagerException {
+        addEndpoint(endpoint, entry, null);
+    }
+
+    public void addEndpoint(String endpoint, EndpointEntry entry, CommandSettings endpointSettings) throws EndpointManagerException {
         // convert endpoint into EndpointPattern
         EndpointPattern endpointPattern = convertEndpointIntoRegex(endpoint);
         // check if endpoint already exists
         if (endpointMap.containsKey(endpointPattern))
             throw new EndpointManagerException(String.format("endpoint '%s' for command '%s' already exists; " +
                     "endpoints for a command must be unique", endpoint, command));
+        // set settings for endpoint to use
+        CommandSettings settingsToUse;
+        if (endpointSettings != null) {
+            settingsToUse = CommandSettings.combine(settings, endpointSettings);
+        } else {
+            settingsToUse = settings;
+        }
         // put pattern into endpoint map
-        endpointMap.put(endpointPattern, new EndpointSaved(entry, endpointPattern.getVariables()));
+        endpointMap.put(endpointPattern, new EndpointSaved(entry, endpointPattern.getVariables(), settingsToUse));
     }
 
     public EndpointValue getEndpoint(String endpoint) throws EndpointManagerException {
@@ -104,7 +115,7 @@ public class CommandEntry {
             values.put(variableName, matcher.group(index));
             index++;
         }
-        return new EndpointValue(match.getValue().getEntry(), values);
+        return new EndpointValue(match.getValue().getEntry(), values, match.getValue().getSettings());
     }
 
     public EndpointSaved removeEndpoint(String endpoint) {

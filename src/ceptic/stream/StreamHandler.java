@@ -194,7 +194,7 @@ public class StreamHandler {
      * @throws StreamException if handler is closed or other stream issue
      */
     public void sendResponse(CepticResponse response) throws StreamException {
-        sendData(response.getData(), true);
+        sendData(response.getData(), false, true);
     }
 
 
@@ -447,6 +447,4 @@ public class StreamHandler {
         return shouldStop;
     }
     //endregion
-
-    // TODO: fill out
 }

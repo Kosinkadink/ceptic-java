@@ -365,4 +365,18 @@ public class EndpointManagerTests {
                 "Exception not thrown for non-existent command's endpoint");
     }
 
+    @Test
+    void removeEndpoint() throws EndpointManagerException {
+        // Arrange
+        String command = "get";
+        String endpoint = "/";
+        EndpointEntry endpointEntry = (request, values) -> new CepticResponse(CepticStatusCode.OK);
+        manager.addCommand(command);
+        manager.addEndpoint(command, endpoint ,endpointEntry);
+        // Act and Assert
+        EndpointSaved saved = manager.removeEndpoint(command, endpoint);
+        assertNotNull(saved, "EndpointSaved should not be null for valid endpoint from removeEndpoint");
+        assertEquals(endpointEntry, saved.getEntry(), "EndpointEntry does not match");
+    }
+
 }

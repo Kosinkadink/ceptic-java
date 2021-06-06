@@ -50,6 +50,20 @@ public class CepticStatusCode {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        // true if refers to this object
+        if (this == o) {
+            return true;
+        }
+        // false is object is null or not of same class
+        if (o == null || getClass() != o.getClass())
+            return false;
+        CepticStatusCode fromO = (CepticStatusCode)o;
+        // true if status codes match
+        return this.valueInt == fromO.valueInt;
+    }
+
     public static int getValueIntFromStatus(CepticStatusCode statusCode) {
         return statusCode.valueInt;
     }
