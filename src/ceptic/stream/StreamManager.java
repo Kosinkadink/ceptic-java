@@ -35,12 +35,10 @@ public class StreamManager extends Thread implements IStreamManager {
 
     private final ThreadPoolExecutor executor;
 
-    private final ConcurrentHashMap.KeySetView<UUID,Boolean> sendingSet = ConcurrentHashMap.newKeySet();
-    private final LinkedBlockingDeque<UUID> sendingDeque = new LinkedBlockingDeque<>();
+    private final LinkedBlockingDeque<StreamFrame> sendingDeque = new LinkedBlockingDeque<>();
     private final long sendingWaitTimeout = 100;
 
     private final ConcurrentHashMap<UUID, StreamHandler> streams = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap.KeySetView<UUID,Boolean> streamsToRemove = ConcurrentHashMap.newKeySet();
 
     public StreamManager(SocketCeptic socket, UUID managerId, String destination, StreamSettings settings, RemovableManagers removable, boolean isServer) {
         this.socket = socket;
@@ -100,7 +98,7 @@ public class StreamManager extends Thread implements IStreamManager {
 
     @Override
     public StreamHandler createHandler(UUID streamId) {
-        StreamHandler handler = new StreamHandler(streamId, settings, sendingSet, sendingDeque);
+        StreamHandler handler = new StreamHandler(streamId, settings, sendingDeque);
         streams.put(handler.getStreamId(), handler);
         return handler;
     }
@@ -142,42 +140,34 @@ public class StreamManager extends Thread implements IStreamManager {
         receiveThread.start();
         try {
             while (!shouldStop) {
-                UUID requestStreamId = null;
+                StreamFrame frame = null;
                 try {
-                    requestStreamId = sendingDeque.pollFirst(sendingWaitTimeout, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException ignored) {
-                }
+                    frame = sendingDeque.pollFirst(sendingWaitTimeout, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException ignored) { }
                 // if requesting send, check handlers' send buffers
-                if (requestStreamId != null) {
-                    // clear sending trigger
-                    clearSending(requestStreamId);
+                if (frame != null) {
                     // get requesting stream
-                    StreamHandler handler = streams.get(requestStreamId);
+                    StreamHandler handler = streams.get(frame.getStreamId());
                     if (handler != null) {
-                        while (!shouldStop) {
-                            StreamFrame frame = handler.getNextSendBufferFrame();
-                            // if no frame to be read, break out of loop
-                            if (frame == null) {
-                                break;
-                            }
-                            // try to send frame
-                            try {
-                                frame.send(socket);
-                            } catch (SocketCepticException e) {
-                                // trigger manager to stop if problem with socket
-                                stopRunning(String.format("SocketCepticException: %s", e));
-                                break;
-                            }
-                            // if sent close frame, close handler
-                            if (frame.isClose()) {
-                                handler.stop();
-                            } else if (frame.isCloseAll()) {
-                                stopRunning("sending close_all from handler " + requestStreamId);
-                                break;
-                            }
-                            // update keep alive; frame sent, so stream must be active
-                            updateKeepAlive();
+                        // decrement size of handler's send buffer
+                        handler.decrementSendBuffer(frame);
+                        // try to send frame
+                        try {
+                            frame.send(socket);
+                        } catch (SocketCepticException e) {
+                            // trigger manager to stop if problem with socket
+                            stopRunning(String.format("SocketCepticException: %s", e));
+                            break;
                         }
+                        // if sent close frame, close handler
+                        if (frame.isClose()) {
+                            handler.stop();
+                        } else if (frame.isCloseAll()) {
+                            stopRunning("sending close_all from handler " + handler.getStreamId());
+                            break;
+                        }
+                        // update keep alive; frame sent, so stream must be active
+                        updateKeepAlive();
                     }
                 }
             }
@@ -206,10 +196,6 @@ public class StreamManager extends Thread implements IStreamManager {
     private void startTimers() {
         existenceTimer.start();
         keepAliveTimer.start();
-    }
-
-    private void clearSending(UUID streamId) {
-        sendingSet.remove(streamId);
     }
 
     /**

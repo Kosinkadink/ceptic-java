@@ -157,6 +157,7 @@ public class CepticClient implements RemovableManagers {
                 // receive body
                 response.setBody(stream.readDataRaw(response.getContentLength()));
             }
+            // TODO: add check for Exchange header on request as well
             // close stream if no Exchange header
             if (!response.getExchange()) {
                 stream.sendClose();

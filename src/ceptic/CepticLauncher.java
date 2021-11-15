@@ -17,8 +17,10 @@ import ceptic.server.ServerSettings;
 import ceptic.server.ServerSettingsBuilder;
 import ceptic.stream.StreamData;
 import ceptic.stream.StreamHandler;
+import ceptic.stream.exceptions.StreamException;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
@@ -26,6 +28,7 @@ public class CepticLauncher {
 
 	public static void main(String[] args) throws EndpointManagerException {
 		doServer();
+//		doClient();
 	}
 
 	private static void doServer() throws EndpointManagerException {
@@ -49,9 +52,72 @@ public class CepticLauncher {
 			}
 		});
 
+		server.addRoute(CommandType.GET, "/exchange", new EndpointEntry() {
+			@Override
+			public CepticResponse perform(CepticRequest request, HashMap<String, String> values) {
+				StreamHandler stream = request.beginExchange();
+				if (stream == null) {
+					return new CepticResponse(CepticStatusCode.BAD_REQUEST);
+				}
+				try {
+					String previousData = "";
+					int count = 0;
+					while (true) {
+						StreamData streamData = stream.readData(100);
+						if (!streamData.isData() && !streamData.isResponse())
+							continue;
+						//if (streamData.isData() && streamData.getData().length == 0)
+						//	continue;
+						count++;
+//						try {
+//							Thread.sleep(10);
+//						} catch (InterruptedException e) {
+//							e.printStackTrace();
+//						}
+						//System.out.println(streamData.getData());
+						String data;
+						try {
+							data = new String(streamData.getData(), StandardCharsets.UTF_8);
+							previousData = data;
+						} catch (NullPointerException e) {
+							System.out.printf("Caught NPE for following data (previous was %s):", previousData);
+							System.out.println("isData: " + streamData.isData());
+							System.out.println("isResponse: " + streamData.isResponse());
+							if (streamData.isData()) {
+								System.out.println(streamData.getData().length);
+							}
+							if (streamData.isResponse()) {
+								System.out.println(new String(streamData.getResponse().getData(), StandardCharsets.UTF_8));
+							}
+							throw e;
+						}
+						if (count % 500 == 0)
+							System.out.println("DATA: " + data);
+						if (data.equals("exit")) {
+							System.out.println("Client requested end of exchange!");
+							break;
+						} else {
+							stream.sendData(streamData.getData());
+						}
+					}
+				} catch (StreamException e) {
+					System.out.println("StreamException: " + e);
+				}
+				return new CepticResponse(CepticStatusCode.OK);
+			}
+		});
+
 		server.start();
 		Scanner in = new Scanner(System.in);
 		System.out.println("Press ENTER to close server...");
+		Thread thread = new Thread(){
+			public void run(){
+				System.out.println("Thread Running");
+				doClient();
+				System.out.println("Thread Done Running");
+			}
+		};
+		//thread.start();
 		in.nextLine();
 		System.out.println("ENTER pressed!");
 		server.stopRunning();
@@ -88,6 +154,7 @@ public class CepticLauncher {
 		CepticRequest requestExchange = new CepticRequest(CommandType.GET, "localhost/exchange");
 		// try to connect to server
 		try {
+			ArrayList<byte[]> allData = new ArrayList<>();
 			CepticResponse response = client.connect(requestExchange);
 			System.out.println("Request successful!");
 			System.out.printf("%s\n%s\n%s\n",
@@ -97,8 +164,10 @@ public class CepticLauncher {
 			if (response.getExchange()) {
 				StreamHandler stream = response.getStream();
 				boolean hasReceivedResponse = false;
-				for (int i = 0; i < 4; i++) {
-					stream.sendData(String.format("echo%d", i).getBytes(StandardCharsets.UTF_8));
+				for (int i = 0; i < 10000; i++) {
+					String stringData = String.format("echo%d", i);
+					byte[] sentData = stringData.getBytes(StandardCharsets.UTF_8);
+					stream.sendData(sentData);
 					StreamData data = stream.readData(100);
 					if (data.isResponse()) {
 						hasReceivedResponse = true;
@@ -109,7 +178,15 @@ public class CepticLauncher {
 								new String(data.getResponse().getBody(), StandardCharsets.UTF_8));
 						break;
 					} else {
-						System.out.printf("Received echo: %s\n", new String(data.getData(), StandardCharsets.UTF_8));
+
+						byte[] receivedData = data.getData();
+						if (receivedData == null) {
+							System.out.println("Received null when expecting " + stringData);
+						} else {
+							allData.add(receivedData);
+						}
+						if (i % 500 == 0)
+							System.out.printf("Received echo: %s\n", new String(data.getData(), StandardCharsets.UTF_8));
 					}
 				}
 				if (!hasReceivedResponse) {
@@ -123,6 +200,7 @@ public class CepticLauncher {
 								new String(data.getResponse().getBody(), StandardCharsets.UTF_8));
 					}
 				}
+				System.out.println("Total non-null data echoed back: " + allData.size());
 				stream.sendClose();
 			}
 		} catch (CepticException exception) {

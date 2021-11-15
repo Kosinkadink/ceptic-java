@@ -2,6 +2,7 @@ package ceptic.common;
 
 import ceptic.common.exceptions.CepticRequestVerifyException;
 import ceptic.stream.StreamHandler;
+import ceptic.stream.exceptions.StreamException;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
@@ -18,7 +19,6 @@ public class CepticRequest extends CepticHeaders {
 
     private String host;
     private int port = Constants.DEFAULT_PORT;
-    // TODO: add allowExchange boolean to force close any response no matter if they contain Exchange header
 
     public CepticRequest(String command, String url) {
         this.command = command;
@@ -153,5 +153,22 @@ public class CepticRequest extends CepticHeaders {
         return fromData(new String(data, StandardCharsets.UTF_8));
     }
     //endregion
+
+    public StreamHandler beginExchange() {
+        CepticResponse response = new CepticResponse(CepticStatusCode.OK);
+        response.setExchange(true);
+        if (stream != null && !stream.isStopped()) {
+            try {
+                stream.sendResponse(response);
+            } catch (StreamException e) {
+                if (stream.getSettings().verbose)
+                    System.out.printf("StreamException type %s raised while trying to beginExchange: %s\n",
+                            e.getClass().toString(), e);
+                return null;
+            }
+            return stream;
+        }
+        return null;
+    }
 
 }

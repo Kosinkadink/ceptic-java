@@ -17,21 +17,29 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class StreamHandler {
 
     private final LinkedBlockingDeque<StreamFrame> readBuffer;
-    private final LinkedBlockingDeque<StreamFrame> sendBuffer;
+    private final LinkedBlockingDeque<StreamFrame> managerSendDeque;
+    private final AtomicInteger readBufferCounter = new AtomicInteger(0);
+    private final AtomicInteger sendBufferCounter = new AtomicInteger(0);
     private final long bufferWaitTimeout = 100;
+
+    private final Lock sendBufferLock;
+    private final Condition isSendBufferDecreased;
+    private final Lock readBufferLock;
+    private final Condition isReadBufferDecreased;
 
     private final UUID streamId;
 
     private final StreamSettings settings;
-    private final ConcurrentHashMap.KeySetView<UUID,Boolean> sendingSet;
-    private final LinkedBlockingDeque<UUID> sendingDeque;
 
     private final Timer existenceTimer = new Timer();
     private final Timer keepAliveTimer = new Timer();
@@ -43,14 +51,17 @@ public class StreamHandler {
         }
     });
 
-    public StreamHandler(UUID streamId, StreamSettings settings,
-                         ConcurrentHashMap.KeySetView<UUID,Boolean> sendingSet, LinkedBlockingDeque<UUID> sendingDeque) {
+    public StreamHandler(UUID streamId, StreamSettings settings, LinkedBlockingDeque<StreamFrame> managerSendDeque) {
         this.streamId = streamId;
         this.settings = settings;
-        this.sendingSet = sendingSet;
-        this.sendingDeque = sendingDeque;
-        readBuffer = new LinkedBlockingDeque<>(settings.readBufferSize);
-        sendBuffer = new LinkedBlockingDeque<>(settings.sendBufferSize);
+        this.managerSendDeque = managerSendDeque;
+
+        readBuffer = new LinkedBlockingDeque<>();
+        sendBufferLock = new ReentrantLock();
+        isSendBufferDecreased = sendBufferLock.newCondition();
+        readBufferLock = new ReentrantLock();
+        isReadBufferDecreased = readBufferLock.newCondition();
+
         startTimers();
     }
 
@@ -73,22 +84,39 @@ public class StreamHandler {
 
     //region Buffer Checks
     public boolean isReadBufferFull() {
-        return readBuffer.remainingCapacity() <= 0;
+        return readBufferCounter.get() >= settings.readBufferSize;
     }
 
     public boolean isSendBufferFull() {
-        return sendBuffer.remainingCapacity() <= 0;
+        return sendBufferCounter.get() >= settings.sendBufferSize;
     }
 
-    private void triggerSending() {
-        if (!sendingSet.contains(streamId)) {
-            sendingDeque.addLast(streamId);
-            sendingSet.add(streamId);
+    protected void incrementSendBuffer(StreamFrame frame) {
+        sendBufferCounter.getAndAdd(frame.getSize());
+    }
+
+    protected void decrementSendBuffer(StreamFrame frame) {
+        sendBufferLock.lock();
+        try {
+            sendBufferCounter.getAndAdd(-1 * frame.getSize());
+            isSendBufferDecreased.signalAll();
+        } finally {
+            sendBufferLock.unlock();
         }
     }
 
-    protected StreamFrame getNextSendBufferFrame() {
-        return sendBuffer.pollFirst();
+    protected void incrementReadBuffer(StreamFrame frame) {
+        readBufferCounter.getAndAdd(frame.getSize());
+    }
+
+    protected void decrementReadBuffer(StreamFrame frame) {
+        readBufferLock.lock();
+        try {
+            readBufferCounter.getAndAdd(-1 * frame.getSize());
+            isReadBufferDecreased.signalAll();
+        } finally {
+            readBufferLock.unlock();
+        }
     }
     //endregion
 
@@ -128,11 +156,21 @@ public class StreamHandler {
             updateKeepAlive();
             // encode data on frame
             frame.encodeData(encodeHandler);
+            // increment send buffer counter
+            incrementSendBuffer(frame);
             // while not stopped, attempt to insert frame into buffer
             while (!isStopped()) {
                 try {
-                    if (sendBuffer.offerLast(frame, bufferWaitTimeout, TimeUnit.MILLISECONDS)) {
-                        triggerSending();
+                    if (isSendBufferFull()) {
+                        try {
+                            sendBufferLock.lock();
+                            isSendBufferDecreased.await(bufferWaitTimeout, TimeUnit.MILLISECONDS);
+                            continue;
+                        } finally {
+                            sendBufferLock.unlock();
+                        }
+                    }
+                    if (managerSendDeque.offerLast(frame, bufferWaitTimeout, TimeUnit.MILLISECONDS)) {
                         break;
                     }
                 } catch (InterruptedException e) {
@@ -217,8 +255,18 @@ public class StreamHandler {
         // update keep alive
         updateKeepAlive();
         // while not stopped, attempt to insert frame into buffer
+        incrementReadBuffer(frame);
         while (!isStopped()) {
             try {
+                if (isReadBufferFull()) {
+                    try {
+                        readBufferLock.lock();
+                        isReadBufferDecreased.await(bufferWaitTimeout, TimeUnit.MILLISECONDS);
+                        continue;
+                    } finally {
+                        readBufferLock.unlock();
+                    }
+                }
                 if (readBuffer.offerLast(frame, bufferWaitTimeout, TimeUnit.MILLISECONDS)) {
                     break;
                 }
@@ -276,6 +324,8 @@ public class StreamHandler {
         }
         // if frame not null
         if (frame != null) {
+            // decrement read buffer counter
+            decrementReadBuffer(frame);
             // decode frame data
             frame.decodeData(encodeHandler);
             // if close frame, throw exception

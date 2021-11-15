@@ -39,6 +39,10 @@ public class StreamFrame {
         return data;
     }
 
+    public int getSize() {
+        return 38 + data.length;
+    }
+
     public void encodeData(EncodeHandler encodeHandler) {
         data = encodeHandler.encode(data);
     }
@@ -87,8 +91,8 @@ public class StreamFrame {
         }
         // if data length is greater than max length, raise exception
         if (dataLength > maxDataLength) {
-            throw new StreamFrameSizeException(String.format("dataLength (%n) greater than allowed max length of " +
-                    "%n",
+            throw new StreamFrameSizeException(String.format("dataLength (%d) greater than allowed max length of " +
+                    "%d",
                     dataLength, maxDataLength));
         }
         // if data length not zero, get data

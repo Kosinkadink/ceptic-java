@@ -28,7 +28,7 @@ public class StreamManagerStandalone extends Thread implements IStreamManager {
     private String stopReason = "";
 
     private final ConcurrentHashMap.KeySetView<UUID,Boolean> sendingSet = ConcurrentHashMap.newKeySet();
-    private final LinkedBlockingDeque<UUID> sendingDeque = new LinkedBlockingDeque<>();
+    private final LinkedBlockingDeque<StreamFrame> sendingDeque = new LinkedBlockingDeque<>();
     private final long sendingWaitTimeout = 100;
 
     private final ThreadPoolExecutor executor;
@@ -52,42 +52,40 @@ public class StreamManagerStandalone extends Thread implements IStreamManager {
         executor.execute(this::receiveFrames);
         try {
             while (!shouldStop) {
-                UUID requestStreamId = null;
-                try {
-                    requestStreamId = sendingDeque.pollFirst(sendingWaitTimeout, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException ignored) {
-                }
-                // if requesting send, check handler's send buffer
-                if (requestStreamId != null) {
-                    // clear sending trigger
-                    clearSending();
-                    if (stream != null) {
-                        while (!shouldStop) {
-                            StreamFrame frame = stream.getNextSendBufferFrame();
-                            // if no frame to be read, break out of loop
-                            if (frame == null) {
-                                break;
-                            }
-                            // try to send frame
-                            try {
-                                frame.send(socket);
-                            } catch (SocketCepticException e) {
-                                // trigger manager to stop if problem with socket
-                                stopRunning(String.format("SocketCepticException: %s", e));
-                                break;
-                            }
-                            // if sent close frame, close handler
-                            if (frame.isClose()) {
-                                stream.stop();
-                            } else if (frame.isCloseAll()) {
-                                stopRunning("sending close_all from handler " + requestStreamId);
-                                break;
-                            }
-                            // update keep alive; frame sent, so stream must be active
-                            updateKeepAlive();
-                        }
-                    }
-                }
+//                StreamFrame frame
+//                UUID requestStreamId = null;
+//                try {
+//                    frame = sendingDeque.pollFirst(sendingWaitTimeout, TimeUnit.MILLISECONDS);
+//                } catch (InterruptedException ignored) {
+//                }
+//                // clear sending trigger
+//                clearSending();
+//                if (stream != null) {
+//                    while (!shouldStop) {
+//                        StreamFrame frame = stream.getNextSendBufferFrame();
+//                        // if no frame to be read, break out of loop
+//                        if (frame == null) {
+//                            break;
+//                        }
+//                        // try to send frame
+//                        try {
+//                            frame.send(socket);
+//                        } catch (SocketCepticException e) {
+//                            // trigger manager to stop if problem with socket
+//                            stopRunning(String.format("SocketCepticException: %s", e));
+//                            break;
+//                        }
+//                        // if sent close frame, close handler
+//                        if (frame.isClose()) {
+//                            stream.stop();
+//                        } else if (frame.isCloseAll()) {
+//                            stopRunning("sending close_all from handler " + requestStreamId);
+//                            break;
+//                        }
+//                        // update keep alive; frame sent, so stream must be active
+//                        updateKeepAlive();
+//                    }
+//                }
                 if (isTimedOut()) {
                     stopRunning("manager timed out");
                 }
@@ -202,7 +200,7 @@ public class StreamManagerStandalone extends Thread implements IStreamManager {
     @Override
     public StreamHandler createHandler(UUID streamId) {
         if (stream == null || stream.isStopped()) {
-            stream = new StreamHandler(streamId, settings, sendingSet, sendingDeque);
+            stream = new StreamHandler(streamId, settings, sendingDeque);
             return stream;
         }
         return null;
