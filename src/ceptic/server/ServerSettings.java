@@ -16,12 +16,13 @@ public class ServerSettings {
     public int handlerMaxCount;
     public int requestQueueSize;
     public boolean verbose;
+    public boolean daemon;
 
 
     protected ServerSettings(int port, String version, int headersMinSize, int headersMaxSize, int frameMinSize,
                           int frameMaxSize, int bodyMax, int streamMinTimeout, int streamTimeout,
                           int sendBufferSize, int readBufferSize, int handlerMaxCount, int requestQueueSize,
-                          boolean verbose) {
+                          boolean verbose, boolean daemon) {
         this.port = port;
         this.version = version;
         this.headersMinSize = headersMinSize;
@@ -36,6 +37,7 @@ public class ServerSettings {
         this.handlerMaxCount = handlerMaxCount;
         this.requestQueueSize = requestQueueSize;
         this.verbose = verbose;
+        this.daemon = daemon;
     }
 
 }

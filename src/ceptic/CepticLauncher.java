@@ -6,16 +6,59 @@ import ceptic.client.ClientSettings;
 import ceptic.client.ClientSettingsBuilder;
 import ceptic.common.CepticRequest;
 import ceptic.common.CepticResponse;
+import ceptic.common.CepticStatusCode;
 import ceptic.common.CommandType;
 import ceptic.common.exceptions.CepticException;
+import ceptic.endpoint.EndpointEntry;
+import ceptic.endpoint.exceptions.EndpointManagerException;
+import ceptic.server.CepticServer;
+import ceptic.server.CepticServerBuilder;
+import ceptic.server.ServerSettings;
+import ceptic.server.ServerSettingsBuilder;
 import ceptic.stream.StreamData;
 import ceptic.stream.StreamHandler;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Scanner;
 
 public class CepticLauncher {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws EndpointManagerException {
+		doServer();
+	}
+
+	private static void doServer() throws EndpointManagerException {
+		// create server settings
+		ServerSettings settings = new ServerSettingsBuilder()
+				.verbose(true)
+				.daemon(false)
+				.build();
+
+		CepticServer server = new CepticServerBuilder()
+				.secure(false)
+				.settings(settings)
+				.build();
+
+		server.addCommand(CommandType.GET);
+
+		server.addRoute(CommandType.GET, "/", new EndpointEntry() {
+			@Override
+			public CepticResponse perform(CepticRequest request, HashMap<String, String> values) {
+				return new CepticResponse(CepticStatusCode.OK);
+			}
+		});
+
+		server.start();
+		Scanner in = new Scanner(System.in);
+		System.out.println("Press ENTER to close server...");
+		in.nextLine();
+		System.out.println("ENTER pressed!");
+		server.stopRunning();
+		System.out.println("Server has stopped");
+	}
+
+	private static void doClient() {
 		// create client settings
 		ClientSettings settings = new ClientSettingsBuilder()
 				.build();

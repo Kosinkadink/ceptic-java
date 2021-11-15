@@ -3,72 +3,72 @@ package ceptic.client;
 
 public class ClientSettingsBuilder {
 
-    private String _version = "1.0.0";
-    private int _headersMinSize = 1024000;
-    private int _headersMaxSize = 1024000;
-    private int _frameMinSize = 1024000;
-    private int _frameMaxSize = 1024000;
-    private int _bodyMax = 102400000;
-    private int _streamMinTimeout = 1;
-    private int _streamTimeout = 5;
-    private int _sendBufferSize = 102400000;
-    private int _readBufferSize = 102400000;
+    private String version = "1.0.0";
+    private int headersMinSize = 1024000;
+    private int headersMaxSize = 1024000;
+    private int frameMinSize = 1024000;
+    private int frameMaxSize = 1024000;
+    private int bodyMax = 102400000;
+    private int streamMinTimeout = 1;
+    private int streamTimeout = 5;
+    private int sendBufferSize = 102400000;
+    private int readBufferSize = 102400000;
 
     public ClientSettingsBuilder() { }
 
     public ClientSettings build() {
         // TODO: add verification for settings
-        return new ClientSettings(_version, _headersMinSize, _headersMaxSize, _frameMinSize, _frameMaxSize,
-                _bodyMax, _streamMinTimeout, _streamTimeout, _sendBufferSize, _readBufferSize, 9000);
+        return new ClientSettings(version, headersMinSize, headersMaxSize, frameMinSize, frameMaxSize,
+                bodyMax, streamMinTimeout, streamTimeout, sendBufferSize, readBufferSize, 9000);
     }
 
-    public ClientSettingsBuilder version(String _version) {
-        this._version = _version;
+    public ClientSettingsBuilder version(String version) {
+        this.version = version;
         return this;
     }
 
-    public ClientSettingsBuilder headersMinSize(int _headersMinSize) {
-        this._headersMinSize = _headersMinSize;
+    public ClientSettingsBuilder headersMinSize(int headersMinSize) {
+        this.headersMinSize = headersMinSize;
         return this;
     }
 
-    public ClientSettingsBuilder headersMaxSize(int _headersMaxSize) {
-        this._headersMaxSize = _headersMaxSize;
+    public ClientSettingsBuilder headersMaxSize(int headersMaxSize) {
+        this.headersMaxSize = headersMaxSize;
         return this;
     }
 
-    public ClientSettingsBuilder frameMinSize(int _frameMinSize) {
-        this._frameMinSize = _frameMinSize;
+    public ClientSettingsBuilder frameMinSize(int frameMinSize) {
+        this.frameMinSize = frameMinSize;
         return this;
     }
 
-    public ClientSettingsBuilder frameMaxSize(int _frameMaxSize) {
-        this._frameMaxSize = _frameMaxSize;
+    public ClientSettingsBuilder frameMaxSize(int frameMaxSize) {
+        this.frameMaxSize = frameMaxSize;
         return this;
     }
 
-    public ClientSettingsBuilder bodyMax(int _bodyMax) {
-        this._bodyMax = _bodyMax;
+    public ClientSettingsBuilder bodyMax(int bodyMax) {
+        this.bodyMax = bodyMax;
         return this;
     }
 
-    public ClientSettingsBuilder streamMinTimeout(int _streamMinTimeout) {
-        this._streamMinTimeout = _streamMinTimeout;
+    public ClientSettingsBuilder streamMinTimeout(int streamMinTimeout) {
+        this.streamMinTimeout = streamMinTimeout;
         return this;
     }
 
-    public ClientSettingsBuilder streamTimeout(int _streamTimeout) {
-        this._streamTimeout = _streamTimeout;
+    public ClientSettingsBuilder streamTimeout(int streamTimeout) {
+        this.streamTimeout = streamTimeout;
         return this;
     }
 
-    public ClientSettingsBuilder sendBufferSize(int _sendBufferSize) {
-        this._sendBufferSize = _sendBufferSize;
+    public ClientSettingsBuilder sendBufferSize(int sendBufferSize) {
+        this.sendBufferSize = sendBufferSize;
         return this;
     }
 
-    public ClientSettingsBuilder readBufferSize(int _readBufferSize) {
-        this._readBufferSize = _readBufferSize;
+    public ClientSettingsBuilder readBufferSize(int readBufferSize) {
+        this.readBufferSize = readBufferSize;
         return this;
     }
 

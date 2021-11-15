@@ -10,6 +10,7 @@ import ceptic.endpoint.EndpointValue;
 import ceptic.endpoint.exceptions.EndpointManagerException;
 import ceptic.net.SocketCeptic;
 import ceptic.net.exceptions.SocketCepticException;
+import ceptic.stream.IStreamManager;
 import ceptic.stream.StreamHandler;
 import ceptic.stream.StreamManager;
 import ceptic.stream.StreamSettings;
@@ -18,10 +19,7 @@ import ceptic.stream.exceptions.StreamTotalDataSizeException;
 import org.json.simple.JSONArray;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,12 +36,14 @@ public class CepticServer extends Thread implements RemovableManagers {
     private final String caFile;
     private final boolean secure;
 
+    private ServerSocket serverSocket;
+
     private boolean shouldStop = false;
     private boolean stopped = false;
 
     protected final EndpointManager endpointManager;
 
-    protected final ConcurrentHashMap<UUID, StreamManager> managers = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<UUID, IStreamManager> managers = new ConcurrentHashMap<>();
 
     protected final ThreadPoolExecutor executor;
 
@@ -53,6 +53,8 @@ public class CepticServer extends Thread implements RemovableManagers {
         this.keyFile = keyFile;
         this.caFile = caFile;
         this.secure = secure;
+        // set daemon based on settings
+        setDaemon(settings.daemon);
         // create executor
         executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         // create endpoint manager
@@ -87,7 +89,6 @@ public class CepticServer extends Thread implements RemovableManagers {
             System.out.printf("ceptic server started - version %s on port %d (secure: %b)\n",
                     settings.version, settings.port, secure);
         // create server socket
-        ServerSocket serverSocket;
         try {
             serverSocket = new ServerSocket(settings.port, settings.requestQueueSize);
         } catch (IOException e) {
@@ -110,8 +111,12 @@ public class CepticServer extends Thread implements RemovableManagers {
             // accept socket
             try {
                 socket = serverSocket.accept();
-            } catch (IOException e) {
-                if (settings.verbose)
+            }
+            catch (SocketTimeoutException e) {
+                continue;
+            }
+            catch (IOException e) {
+                if (!shouldStop && settings.verbose)
                     System.out.println("Issue accepting Socket: " + e);
                 stopRunning();
                 continue;
@@ -144,6 +149,8 @@ public class CepticServer extends Thread implements RemovableManagers {
         }
         // shut down all managers
         removeAllManagers(true);
+        // shut down executor
+        executor.shutdownNow();
         // done stopping
         stopped = true;
     }
@@ -152,6 +159,10 @@ public class CepticServer extends Thread implements RemovableManagers {
     //region Stop
     public void stopRunning() {
         shouldStop = true;
+        try {
+            if (serverSocket != null)
+                serverSocket.close();
+        } catch (IOException ignored) { }
     }
 
     public boolean isStopped() {
@@ -257,7 +268,7 @@ public class CepticServer extends Thread implements RemovableManagers {
     //region Managers
     protected void createNewManager(Socket rawSocket) throws SocketCepticException {
         if (settings.verbose)
-            System.out.println("Got a connection from %s" + rawSocket.getRemoteSocketAddress());
+            System.out.println("Got a connection from " + rawSocket.getRemoteSocketAddress());
         // TODO: wrap with SSL to get SSLSocket
         // wrap as SocketCeptic
         SocketCeptic socket = new SocketCeptic(rawSocket);
@@ -351,34 +362,32 @@ public class CepticServer extends Thread implements RemovableManagers {
         managers.put(manager.getManagerId(), manager);
     }
 
-    protected StreamManager getManager(UUID managerId) {
+    protected IStreamManager getManager(UUID managerId) {
         return managers.get(managerId);
     }
 
     @Override
-    public StreamManager removeManager(UUID managerId) {
+    public IStreamManager removeManager(UUID managerId) {
         // remove manager from managers map
-        StreamManager manager = managers.remove(managerId);
+        IStreamManager manager = managers.remove(managerId);
         if (manager != null) {
             manager.stopRunning("removed by CepticServer");
         }
         return manager;
     }
 
-    protected List<StreamManager> removeAllManagers(boolean blocking) {
-        List<StreamManager> removedManagers = new ArrayList<>();
+    protected List<IStreamManager> removeAllManagers(boolean blocking) {
+        List<IStreamManager> removedManagers = new ArrayList<>();
         for (UUID managerId : managers.keySet()) {
             removedManagers.add(removeManager(managerId));
         }
         // if blocking, wait to join manager thread
         if (blocking) {
-            for (StreamManager manager : removedManagers) {
-                while (true) {
-                    try {
-                        manager.join();
-                        break;
-                    } catch (InterruptedException ignored) { }
-                }
+            for (IStreamManager manager : removedManagers) {
+                if (manager instanceof StreamManager)
+                try {
+                    ((StreamManager) manager).join();
+                } catch (InterruptedException ignored) { }
             }
         }
         return removedManagers;

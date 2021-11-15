@@ -2,97 +2,103 @@ package ceptic.server;
 
 public class ServerSettingsBuilder {
 
-    private int _port = 9000;
-    private String _version = "1.0.0";
-    private int _headersMinSize = 1024000;
-    private int _headersMaxSize = 1024000;
-    private int _frameMinSize = 1024000;
-    private int _frameMaxSize = 1024000;
-    private int _bodyMax = 102400000;
-    private int _streamMinTimeout = 1;
-    private int _streamTimeout = 5;
-    private int _sendBufferSize = 102400000;
-    private int _readBufferSize = 102400000;
-    private int _handlerMaxCount = 0;
-    private int _requestQueueSize = 10;
-    private boolean _verbose = false;
+    private int port = 9000;
+    private String version = "1.0.0";
+    private int headersMinSize = 1024000;
+    private int headersMaxSize = 1024000;
+    private int frameMinSize = 1024000;
+    private int frameMaxSize = 1024000;
+    private int bodyMax = 102400000;
+    private int streamMinTimeout = 1;
+    private int streamTimeout = 5;
+    private int sendBufferSize = 102400000;
+    private int readBufferSize = 102400000;
+    private int handlerMaxCount = 0;
+    private int requestQueueSize = 10;
+    private boolean verbose = false;
+    private boolean daemon = false;
 
     public ServerSettingsBuilder() { }
 
     public ServerSettings build() {
         // TODO: add verification for settings
-        return new ServerSettings(_port, _version, _headersMinSize, _headersMaxSize, _frameMinSize, _frameMaxSize,
-                _bodyMax, _streamMinTimeout, _streamTimeout, _sendBufferSize, _readBufferSize, _handlerMaxCount,
-                _requestQueueSize, _verbose);
+        return new ServerSettings(port, version, headersMinSize, headersMaxSize, frameMinSize, frameMaxSize,
+                bodyMax, streamMinTimeout, streamTimeout, sendBufferSize, readBufferSize, handlerMaxCount,
+                requestQueueSize, verbose, daemon);
     }
 
-    public ServerSettingsBuilder port(int _port) {
-        this._port = _port;
+    public ServerSettingsBuilder port(int port) {
+        this.port = port;
         return this;
     }
 
-    public ServerSettingsBuilder version(String _version) {
-        this._version = _version;
+    public ServerSettingsBuilder version(String version) {
+        this.version = version;
         return this;
     }
 
-    public ServerSettingsBuilder headersMinSize(int _headersMinSize) {
-        this._headersMinSize = _headersMinSize;
+    public ServerSettingsBuilder headersMinSize(int headersMinSize) {
+        this.headersMinSize = headersMinSize;
         return this;
     }
 
-    public ServerSettingsBuilder headersMaxSize(int _headersMaxSize) {
-        this._headersMaxSize = _headersMaxSize;
+    public ServerSettingsBuilder headersMaxSize(int headersMaxSize) {
+        this.headersMaxSize = headersMaxSize;
         return this;
     }
 
-    public ServerSettingsBuilder frameMinSize(int _frameMinSize) {
-        this._frameMinSize = _frameMinSize;
+    public ServerSettingsBuilder frameMinSize(int frameMinSize) {
+        this.frameMinSize = frameMinSize;
         return this;
     }
 
-    public ServerSettingsBuilder frameMaxSize(int _frameMaxSize) {
-        this._frameMaxSize = _frameMaxSize;
+    public ServerSettingsBuilder frameMaxSize(int frameMaxSize) {
+        this.frameMaxSize = frameMaxSize;
         return this;
     }
 
-    public ServerSettingsBuilder bodyMax(int _bodyMax) {
-        this._bodyMax = _bodyMax;
+    public ServerSettingsBuilder bodyMax(int bodyMax) {
+        this.bodyMax = bodyMax;
         return this;
     }
 
-    public ServerSettingsBuilder streamMinTimeout(int _streamMinTimeout) {
-        this._streamMinTimeout = _streamMinTimeout;
+    public ServerSettingsBuilder streamMinTimeout(int streamMinTimeout) {
+        this.streamMinTimeout = streamMinTimeout;
         return this;
     }
 
-    public ServerSettingsBuilder streamTimeout(int _streamTimeout) {
-        this._streamTimeout = _streamTimeout;
+    public ServerSettingsBuilder streamTimeout(int streamTimeout) {
+        this.streamTimeout = streamTimeout;
         return this;
     }
 
-    public ServerSettingsBuilder sendBufferSize(int _sendBufferSize) {
-        this._sendBufferSize = _sendBufferSize;
+    public ServerSettingsBuilder sendBufferSize(int sendBufferSize) {
+        this.sendBufferSize = sendBufferSize;
         return this;
     }
 
-    public ServerSettingsBuilder readBufferSize(int _readBufferSize) {
-        this._readBufferSize = _readBufferSize;
+    public ServerSettingsBuilder readBufferSize(int readBufferSize) {
+        this.readBufferSize = readBufferSize;
         return this;
     }
 
-    public ServerSettingsBuilder handlerMaxCount(int _handlerMaxCount) {
-        this._handlerMaxCount = _handlerMaxCount;
+    public ServerSettingsBuilder handlerMaxCount(int handlerMaxCount) {
+        this.handlerMaxCount = handlerMaxCount;
         return this;
     }
 
-    public ServerSettingsBuilder requestQueueSize(int _requestQueueSize) {
-        this._requestQueueSize = _requestQueueSize;
+    public ServerSettingsBuilder requestQueueSize(int requestQueueSize) {
+        this.requestQueueSize = requestQueueSize;
         return this;
     }
 
-    public ServerSettingsBuilder verbose(boolean _verbose) {
-        this._verbose = _verbose;
+    public ServerSettingsBuilder verbose(boolean verbose) {
+        this.verbose = verbose;
+        return this;
+    }
+
+    public ServerSettingsBuilder daemon(boolean daemon) {
+        this.daemon = daemon;
         return this;
     }
 }

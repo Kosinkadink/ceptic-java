@@ -9,7 +9,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="bcprov-jdk15on-158" level="project" />
     <orderEntry type="library" name="bcprov-jdk15to18-164" level="project" />
     <orderEntry type="module-library" scope="TEST">
       <library name="JUnit4">

@@ -2,49 +2,49 @@ package ceptic.client;
 
 public class CepticClientBuilder {
 
-    private ClientSettings _settings = null;
-    private String _certfile;
-    private String _keyfile;
-    private String _cafile;
-    private boolean _checkHostname = true;
-    private boolean _secure = true;
+    private ClientSettings clientSettings = null;
+    private String certfile;
+    private String keyfile;
+    private String cafile;
+    private boolean checkHostname = true;
+    private boolean secure = true;
 
     public CepticClientBuilder() { }
 
     public CepticClient build() {
-        if (_settings == null) {
-            _settings = new ClientSettingsBuilder().build();
+        if (clientSettings == null) {
+            clientSettings = new ClientSettingsBuilder().build();
         }
-        return new CepticClient(_settings, _certfile, _keyfile, _cafile, _checkHostname, _secure);
+        return new CepticClient(clientSettings, certfile, keyfile, cafile, checkHostname, secure);
     }
 
-    public CepticClientBuilder settings(ClientSettings _settings) {
-        this._settings = _settings;
+    public CepticClientBuilder settings(ClientSettings settings) {
+        this.clientSettings = settings;
         return this;
     }
 
-    public CepticClientBuilder certfile(String _certfile) {
-        this._certfile = _certfile;
+    public CepticClientBuilder certfile(String certfile) {
+        this.certfile = certfile;
         return this;
     }
 
-    public CepticClientBuilder keyfile(String _keyfile) {
-        this._keyfile = _keyfile;
+    public CepticClientBuilder keyfile(String keyfile) {
+        this.keyfile = keyfile;
         return this;
     }
 
-    public CepticClientBuilder cafile(String _cafile) {
-        this._cafile = _cafile;
+    public CepticClientBuilder cafile(String cafile) {
+        this.cafile = cafile;
         return this;
     }
 
-    public CepticClientBuilder checkHostname(boolean _checkHostname) {
-        this._checkHostname = _checkHostname;
+    public CepticClientBuilder checkHostname(boolean checkHostname) {
+        this.checkHostname = checkHostname;
         return this;
     }
 
-    public CepticClientBuilder secure(boolean _secure) {
-        this._secure = _secure;
+    public CepticClientBuilder secure(boolean secure) {
+        this.secure = secure;
         return this;
     }
 
