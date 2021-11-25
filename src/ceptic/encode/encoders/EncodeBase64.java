@@ -4,7 +4,7 @@ import ceptic.encode.EncodeObject;
 
 import java.util.Base64;
 
-public class EncodeBase64 extends EncodeObject {
+public class EncodeBase64 implements EncodeObject {
 
     @Override
     public byte[] encode(byte[] data) {

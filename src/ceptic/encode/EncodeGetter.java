@@ -15,12 +15,12 @@ public class EncodeGetter {
             });
         }
         String[] encodings = encodingString.split(",");
-        return get(Arrays.asList(encodings));
+        return get(encodings);
     }
 
-    public static EncodeHandler get(List<String> encodings) throws UnknownEncodingException {
+    public static EncodeHandler get(String[] encodings) throws UnknownEncodingException {
         List<EncodeObject> encoders = new ArrayList<>();
-        Set<EncodeType> uniqueTypes = new HashSet<EncodeType>();
+        Set<EncodeType> uniqueTypes = new HashSet<>();
         for (String encoding : encodings) {
             EncodeType encodeType = EncodeType.fromValue(encoding);
             if (encodeType == null) {

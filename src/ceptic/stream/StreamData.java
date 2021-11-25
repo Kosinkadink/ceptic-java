@@ -23,6 +23,10 @@ public class StreamData {
         return data != null;
     }
 
+    public boolean isEmpty() {
+        return !isData() && !isResponse();
+    }
+
     public CepticResponse getResponse() {
         return response;
     }

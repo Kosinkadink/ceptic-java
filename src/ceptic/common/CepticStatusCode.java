@@ -11,7 +11,6 @@ public class CepticStatusCode {
     public static final CepticStatusCode NOT_FOUND = new CepticStatusCode(404);
     public static final CepticStatusCode CONFLICT = new CepticStatusCode(409);
     public static final CepticStatusCode INTERNAL_SERVER_ERROR = new CepticStatusCode(500);
-    public static final CepticStatusCode LOCAL_ERROR = new CepticStatusCode(600);
 
     private final int valueInt;
     private final String valueString;
@@ -64,20 +63,12 @@ public class CepticStatusCode {
         return this.valueInt == fromO.valueInt;
     }
 
-    public static int getValueIntFromStatus(CepticStatusCode statusCode) {
-        return statusCode.valueInt;
-    }
-
-    public static String getValueStringFromStatus(CepticStatusCode statusCode) {
-        return statusCode.valueString;
-    }
-
     public boolean isSuccess() {
         return 200 <= valueInt && valueInt <= 399;
     }
 
     public boolean isError() {
-        return 400 <= valueInt && valueInt <= 499;
+        return 400 <= valueInt && valueInt <= 599;
     }
 
     public boolean isClientError() {
@@ -86,10 +77,6 @@ public class CepticStatusCode {
 
     public boolean isServerError() {
         return 500 <= valueInt && valueInt <= 599;
-    }
-
-    public boolean isLocalError() {
-        return 600 <= valueInt && valueInt <= 699;
     }
 
 }

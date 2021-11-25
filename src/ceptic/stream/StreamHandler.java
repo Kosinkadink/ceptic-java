@@ -1,5 +1,6 @@
 package ceptic.stream;
 
+import ceptic.common.CepticRequest;
 import ceptic.common.CepticResponse;
 import ceptic.common.Constants;
 import ceptic.common.Timer;
@@ -33,9 +34,9 @@ public class StreamHandler {
     private final long bufferWaitTimeout = 100;
 
     private final Lock sendBufferLock;
-    private final Condition isSendBufferDecreased;
+    private final Condition eventSendBufferDecreased;
     private final Lock readBufferLock;
-    private final Condition isReadBufferDecreased;
+    private final Condition eventReadBufferDecreased;
 
     private final UUID streamId;
 
@@ -58,9 +59,9 @@ public class StreamHandler {
 
         readBuffer = new LinkedBlockingDeque<>();
         sendBufferLock = new ReentrantLock();
-        isSendBufferDecreased = sendBufferLock.newCondition();
+        eventSendBufferDecreased = sendBufferLock.newCondition();
         readBufferLock = new ReentrantLock();
-        isReadBufferDecreased = readBufferLock.newCondition();
+        eventReadBufferDecreased = readBufferLock.newCondition();
 
         startTimers();
     }
@@ -98,8 +99,8 @@ public class StreamHandler {
     protected void decrementSendBuffer(StreamFrame frame) {
         sendBufferLock.lock();
         try {
-            sendBufferCounter.getAndAdd(-1 * frame.getSize());
-            isSendBufferDecreased.signalAll();
+            sendBufferCounter.getAndAdd(frame.getSize() * -1);
+            eventSendBufferDecreased.signalAll();
         } finally {
             sendBufferLock.unlock();
         }
@@ -112,8 +113,8 @@ public class StreamHandler {
     protected void decrementReadBuffer(StreamFrame frame) {
         readBufferLock.lock();
         try {
-            readBufferCounter.getAndAdd(-1 * frame.getSize());
-            isReadBufferDecreased.signalAll();
+            readBufferCounter.getAndAdd(frame.getSize() * -1);
+            eventReadBufferDecreased.signalAll();
         } finally {
             readBufferLock.unlock();
         }
@@ -148,9 +149,6 @@ public class StreamHandler {
      * @param frame StreamFrame to send
      */
     private void send(StreamFrame frame) throws StreamException {
-        if (isStopped()) {
-            throw new StreamHandlerStoppedException("handler is stopped; cannot send frames through a stopped handler");
-        }
         if (!isStopped()) {
             // update keep alive
             updateKeepAlive();
@@ -164,7 +162,7 @@ public class StreamHandler {
                     if (isSendBufferFull()) {
                         try {
                             sendBufferLock.lock();
-                            isSendBufferDecreased.await(bufferWaitTimeout, TimeUnit.MILLISECONDS);
+                            eventSendBufferDecreased.await(bufferWaitTimeout, TimeUnit.MILLISECONDS);
                             continue;
                         } finally {
                             sendBufferLock.unlock();
@@ -204,17 +202,6 @@ public class StreamHandler {
         sendData(data, false, false);
     }
 
-
-    /**
-     * Send data by converting to StreamFrames and adding them to send buffer
-     * @param data Data to send through stream
-     * @param isFirstHeader true if first header, false otherwise
-     * @throws StreamException if handler is closed or other stream issue
-     */
-    public void sendData(byte[] data, boolean isFirstHeader) throws StreamException {
-        sendData(data, isFirstHeader, false);
-    }
-
     /**
      * Send data by converting to StreamFrames and adding them to send buffer
      * @param data Data to send through stream
@@ -224,6 +211,15 @@ public class StreamHandler {
      */
     public void sendData(byte[] data, boolean isFirstHeader, boolean isResponse) throws StreamException {
         sendAll(new DataStreamFrameGenerator(streamId, data, settings.frameMaxSize, isFirstHeader, isResponse));
+    }
+
+    /**
+     * Send request as data converted into StreamFrames added to send buffer
+     * @param request CepticRequest to be sent
+     * @throws StreamException if handler is closed or other stream issue
+     */
+    public void sendRequest(CepticRequest request) throws StreamException {
+        sendData(request.getData(), true, false);
     }
 
     /**
@@ -252,6 +248,9 @@ public class StreamHandler {
      * @throws StreamHandlerStoppedException if handler is stopped during execution
      */
     protected void addToRead(StreamFrame frame) throws StreamHandlerStoppedException {
+        if (isStopped()) {
+            throw new StreamHandlerStoppedException("handler is stopped; cannot add frames to read through a stopped handler");
+        }
         // update keep alive
         updateKeepAlive();
         // while not stopped, attempt to insert frame into buffer
@@ -261,7 +260,7 @@ public class StreamHandler {
                 if (isReadBufferFull()) {
                     try {
                         readBufferLock.lock();
-                        isReadBufferDecreased.await(bufferWaitTimeout, TimeUnit.MILLISECONDS);
+                        eventReadBufferDecreased.await(bufferWaitTimeout, TimeUnit.MILLISECONDS);
                         continue;
                     } finally {
                         readBufferLock.unlock();

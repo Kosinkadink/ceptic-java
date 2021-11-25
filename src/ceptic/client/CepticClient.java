@@ -121,7 +121,7 @@ public class CepticClient implements RemovableManagers {
     protected CepticResponse connectWithHandler(StreamHandler stream, CepticRequest request) throws StreamException, UnknownEncodingException {
         try {
             // create frames from request and send
-            stream.sendData(request.getData(), true);
+            stream.sendRequest(request);
             // wait for response (maybe return with LOCAL_ERROR?)
             StreamData streamData = stream.readData(stream.getSettings().frameMaxSize);
             if (!streamData.isResponse()) {
@@ -229,6 +229,7 @@ public class CepticClient implements RemovableManagers {
                     serverFrameMaxSizeStr, serverHeaderMaxSizeStr, serverStreamTimeoutStr, serverHandlerMaxCountStr));
         }
         // verify server's chosen values are valid for client
+        // TODO: expand checks to check lower bounds
         StreamSettings streamSettings = new StreamSettings(settings.sendBufferSize, settings.readBufferSize,
                 frameMaxSize, headersMaxSize, streamTimeout, handlerMaxCount);
         if (streamSettings.frameMaxSize > settings.frameMaxSize) {

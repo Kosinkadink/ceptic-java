@@ -39,12 +39,6 @@ public class CepticResponse extends CepticHeaders {
         this(statusCode, null, null, null, null);
     }
 
-    public static CepticResponse createLocalError(String error) {
-        JSONArray errors = new JSONArray();
-        errors.add(error);
-        return new CepticResponse(CepticStatusCode.LOCAL_ERROR, null, null, errors, null);
-    }
-
     public StreamHandler getStream() {
         return stream;
     }

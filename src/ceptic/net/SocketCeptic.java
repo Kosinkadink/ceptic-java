@@ -17,7 +17,7 @@ import java.security.spec.InvalidKeySpecException;
 
 
 public class SocketCeptic {
-	private Socket s;
+	private final Socket s;
 	private InputStream sin;
 	private OutputStream sout;
 	
@@ -78,14 +78,6 @@ public class SocketCeptic {
 		byte[] total_size = String.format("%16s", msg.length).getBytes();
 		sendRaw(total_size);
 		sendRaw(msg);
-	}
-
-	public void sendAll(String msg) throws SocketCepticException {
-		send(msg);
-	}
-
-	public void sendAll(byte[] msg) throws SocketCepticException {
-		send(msg);
 	}
 
 	public void sendRaw(byte[] msg) throws SocketCepticException {

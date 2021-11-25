@@ -144,11 +144,28 @@ public class StreamManager extends Thread implements IStreamManager {
                 try {
                     frame = sendingDeque.pollFirst(sendingWaitTimeout, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException ignored) { }
-                // if requesting send, check handlers' send buffers
+
                 if (frame != null) {
+                    // if close_all frame, send and then immediately stop manager
+                    if (frame.isCloseAll()) {
+                        // update keep alive; close_all frame about to be sent, so stream must be active
+                        updateKeepAlive();
+                        // try to send frame
+                        try {
+                            frame.send(socket);
+                        } catch (SocketCepticException e) {
+                            // trigger manager to stop if problem with socket
+                            stopRunning(String.format("SocketCepticException: %s", e));
+                            break;
+                        }
+                        stopRunning("sending close_all from handler " + frame.getStreamId());
+                        break;
+                    }
                     // get requesting stream
                     StreamHandler handler = streams.get(frame.getStreamId());
                     if (handler != null) {
+                        // update keep alive; frame from valid handler, so stream must be active
+                        updateKeepAlive();
                         // decrement size of handler's send buffer
                         handler.decrementSendBuffer(frame);
                         // try to send frame
@@ -162,12 +179,7 @@ public class StreamManager extends Thread implements IStreamManager {
                         // if sent close frame, close handler
                         if (frame.isClose()) {
                             handler.stop();
-                        } else if (frame.isCloseAll()) {
-                            stopRunning("sending close_all from handler " + handler.getStreamId());
-                            break;
                         }
-                        // update keep alive; frame sent, so stream must be active
-                        updateKeepAlive();
                     }
                 }
             }
