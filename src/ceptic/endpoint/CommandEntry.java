@@ -138,9 +138,6 @@ public class CommandEntry {
         // add '/' to start of endpoint if not present
         if (!endpoint.startsWith("/"))
             endpoint = "/" + endpoint;
-        // add '/' to start of endpoint if not present
-        if (!endpoint.startsWith("/"))
-            endpoint = "/" + endpoint;
             // otherwise replace multiple '/' at start with single
         else
             endpoint = startSlashRegex.matcher(endpoint).replaceFirst("/");

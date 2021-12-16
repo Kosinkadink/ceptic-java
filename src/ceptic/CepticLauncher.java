@@ -23,12 +23,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class CepticLauncher {
 
 	public static void main(String[] args) throws EndpointManagerException {
-		doServer();
+//		doServer();
 //		doClient();
+		doClientBasic();
+//		doClientBasicParallel();
 	}
 
 	private static void doServer() throws EndpointManagerException {
@@ -122,6 +127,91 @@ public class CepticLauncher {
 		System.out.println("ENTER pressed!");
 		server.stopRunning();
 		System.out.println("Server has stopped");
+	}
+
+	private static void doClientBasic() {
+		// create client settings
+		ClientSettings settings = new ClientSettingsBuilder()
+				.build();
+		// create client
+		CepticClient client = new CepticClientBuilder()
+				.settings(settings)
+				.checkHostname(false)
+				.secure(false)
+				.build();
+
+		for (int i = 0; i < 1000; i++) {
+			// create request
+			CepticRequest request = new CepticRequest("get", "localhost/");
+
+			// try to connect to server
+			try {
+				CepticResponse response = client.connect(request);
+				System.out.println(String.format("#%d", i+1) + "Request successful!");
+				System.out.printf("%s\n%s\n%s\n",
+						response.getStatusCode().getValueInt(),
+						response.getHeaders().toJSONString(),
+						new String(response.getBody(), StandardCharsets.UTF_8));
+			} catch (CepticException exception) {
+				System.out.println("Exception occurred trying to make request:");
+				exception.printStackTrace();
+			}
+		}
+		client.stop();
+	}
+
+	private static void doClientBasicParallel() {
+		// create client settings
+		ClientSettings settings = new ClientSettingsBuilder()
+				.build();
+		// create client
+		CepticClient client = new CepticClientBuilder()
+				.settings(settings)
+				.checkHostname(false)
+				.secure(false)
+				.build();
+
+		ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+
+
+		for (int i = 0; i < 1000; i++) {
+
+//			try {
+//				Thread.sleep(25);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+			int finalI = i;
+			executor.execute(() -> {
+
+				System.out.println(String.format("Executing Request #%d",finalI+1));
+				// create request
+				CepticRequest request = new CepticRequest("get", "localhost/");
+
+				// try to connect to server
+				try {
+					CepticResponse response = client.connect(request);
+					System.out.println(String.format("#%d", finalI +1) + "Request successful!");
+					System.out.printf("%s\n%s\n%s\n",
+							response.getStatusCode().getValueInt(),
+							response.getHeaders().toJSONString(),
+							new String(response.getBody(), StandardCharsets.UTF_8));
+				} catch (CepticException exception) {
+					System.out.println("Exception occurred trying to make request:");
+					exception.printStackTrace();
+				}
+			});
+		}
+		System.out.println("Awaiting executor termination...");
+		try {
+			executor.awaitTermination(100, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		System.out.println("Stopping client");
+		client.stop();
+		System.out.println("Stopping executor");
+		executor.shutdownNow();
 	}
 
 	private static void doClient() {

@@ -193,11 +193,12 @@ public class StreamManager extends Thread implements IStreamManager {
         try {
             socket.close();
         } catch (SocketCepticException ignored) { }
-        try {
-            cleanThread.join();
-            receiveThread.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        while (true) {
+            try {
+                cleanThread.join();
+                receiveThread.join();
+                break;
+            } catch (InterruptedException ignored) { }
         }
 
         executor.shutdownNow();

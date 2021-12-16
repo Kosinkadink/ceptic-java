@@ -145,7 +145,8 @@ public class CepticServer extends Thread implements RemovableManagers {
         try {
             serverSocket.close();
         } catch (IOException e) {
-            System.out.println("Issue closing ServerSocket: " + e);
+            if (settings.verbose)
+                System.out.println("Issue closing ServerSocket: " + e);
         }
         // shut down all managers
         removeAllManagers(true);
@@ -201,7 +202,7 @@ public class CepticServer extends Thread implements RemovableManagers {
                     Constants.COMMAND_LENGTH, request.getCommand().length()));
         }
         if (request.getEndpoint().length() > Constants.ENDPOINT_LENGTH) {
-            errors.add(String.format("command too long; should be no more than %d but was %d",
+            errors.add(String.format("endpoint too long; should be no more than %d but was %d",
                     Constants.ENDPOINT_LENGTH, request.getEndpoint().length()));
         }
         // if no errors yet, get endpoint from endpoint manager
@@ -357,7 +358,7 @@ public class CepticServer extends Thread implements RemovableManagers {
         manager.start();
     }
 
-    protected void addManager(StreamManager manager) {
+    protected void addManager(IStreamManager manager) {
         // add manager to map
         managers.put(manager.getManagerId(), manager);
     }

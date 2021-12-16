@@ -63,7 +63,7 @@ public class EndpointManagerTests {
         // Arrange
         manager.addCommand("get");
         // Act
-        CommandEntry entry  = manager.getCommand("post");
+        CommandEntry entry = manager.getCommand("post");
         // Assert
         assertNull(entry, "CommandEntry is supposed to be null from manager.getCommand");
     }
@@ -171,7 +171,6 @@ public class EndpointManagerTests {
     void addEndpoint_BadEndpoints_ThrowException() throws EndpointManagerException {
         // Arrange
         String command = "get";
-        manager.addCommand(command);
         EndpointEntry endpointEntry = (request, values) -> new CepticResponse(CepticStatusCode.OK);
         List<String> endpoints = new ArrayList<>();
         // endpoint cannot be blank
@@ -372,7 +371,7 @@ public class EndpointManagerTests {
         String endpoint = "/";
         EndpointEntry endpointEntry = (request, values) -> new CepticResponse(CepticStatusCode.OK);
         manager.addCommand(command);
-        manager.addEndpoint(command, endpoint ,endpointEntry);
+        manager.addEndpoint(command, endpoint, endpointEntry);
         // Act and Assert
         EndpointSaved saved = manager.removeEndpoint(command, endpoint);
         assertNotNull(saved, "EndpointSaved should not be null for valid endpoint from removeEndpoint");

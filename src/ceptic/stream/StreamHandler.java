@@ -172,8 +172,8 @@ public class StreamHandler {
                         break;
                     }
                 } catch (InterruptedException e) {
-                    stop();
-                    throw new StreamHandlerStoppedException("handler is stopped; cannot send frames through a stopped handler");
+                    //stop();
+                    //throw new StreamHandlerStoppedException("handler is stopped; cannot send frames through a stopped handler");
                 }
             }
         } else {
@@ -271,8 +271,8 @@ public class StreamHandler {
                 }
             }
             catch (InterruptedException e) {
-                stop();
-                throw new StreamHandlerStoppedException("handler is stopped; cannot add frames to read through a stopped handler");
+                //stop();
+                //throw new StreamHandlerStoppedException("handler is stopped; cannot add frames to read through a stopped handler");
             }
         }
     }
@@ -301,11 +301,14 @@ public class StreamHandler {
         // if timeout is less than 0, then block and wait to get next frame (up to stream timeout)
         StreamFrame frame;
         if (timeout < 0) {
-            try {
-                frame = readBuffer.pollFirst(settings.streamTimeout, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                stop();
-                throw new StreamHandlerStoppedException("handler is stopped; cannot read frames through a stopped handler");
+            while (true) {
+                try {
+                    frame = readBuffer.pollFirst(settings.streamTimeout, TimeUnit.SECONDS);
+                    break;
+                } catch (InterruptedException e) {
+//                    stop();
+//                    throw new StreamHandlerStoppedException("handler is stopped; cannot read frames through a stopped handler");
+                }
             }
         }
         // if timeout is 0, do not block and immediately return
@@ -314,11 +317,14 @@ public class StreamHandler {
         }
         // otherwise, wait up to specified time (bounded by stream timeout)
         else {
-            try {
-                frame = readBuffer.pollFirst(Math.min(timeout, settings.streamTimeout), TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                stop();
-                throw new StreamHandlerStoppedException("handler is stopped; cannot read frames through a stopped handler");
+            while(true) {
+                try {
+                    frame = readBuffer.pollFirst(Math.min(timeout, settings.streamTimeout), TimeUnit.SECONDS);
+                    break;
+                } catch (InterruptedException e) {
+                    //stop();
+                    //throw new StreamHandlerStoppedException("handler is stopped; cannot read frames through a stopped handler");
+                }
             }
         }
         // if frame not null
