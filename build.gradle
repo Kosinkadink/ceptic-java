@@ -13,6 +13,10 @@ repositories {
 dependencies {
     compile "com.googlecode.json-simple:json-simple:1.1.1"
     compile "org.bouncycastle:bcprov-jdk15on:1.70"
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 }
 
+group 'org.jedkos'
 version = '1.0.0'
