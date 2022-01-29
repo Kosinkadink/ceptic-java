@@ -1,4 +1,4 @@
-package ceptic.managers.certificatemanager;
+package ceptic.managers.oldcertificatemanager;
 
 import ceptic.managers.filemanager.FileManager;
 

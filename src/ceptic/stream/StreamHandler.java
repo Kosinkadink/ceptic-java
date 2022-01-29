@@ -3,7 +3,7 @@ package ceptic.stream;
 import ceptic.common.CepticRequest;
 import ceptic.common.CepticResponse;
 import ceptic.common.Constants;
-import ceptic.common.Timer;
+import ceptic.common.Stopwatch;
 import ceptic.encode.*;
 import ceptic.encode.exceptions.UnknownEncodingException;
 import ceptic.stream.exceptions.StreamClosedException;
@@ -42,8 +42,8 @@ public class StreamHandler {
 
     private final StreamSettings settings;
 
-    private final Timer existenceTimer = new Timer();
-    private final Timer keepAliveTimer = new Timer();
+    private final Stopwatch existenceTimer = new Stopwatch();
+    private final Stopwatch keepAliveTimer = new Stopwatch();
     private boolean shouldStop = false;
 
     private EncodeHandler encodeHandler = new EncodeHandler(new ArrayList<EncodeObject>() {

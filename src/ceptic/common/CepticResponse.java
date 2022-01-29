@@ -67,7 +67,7 @@ public class CepticResponse extends CepticHeaders {
 
     //region Data
     public byte[] getData() {
-        return String.format("%s\r\n%s", statusCode.getValueString(), headers.toJSONString()).getBytes(StandardCharsets.UTF_8);
+        return String.format("%3s\r\n%s", statusCode.getValue(), headers.toJSONString()).getBytes(StandardCharsets.UTF_8);
     }
 
     public static CepticResponse fromData(String data) {

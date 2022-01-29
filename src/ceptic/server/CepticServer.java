@@ -149,7 +149,7 @@ public class CepticServer extends Thread implements RemovableManagers {
                 System.out.println("Issue closing ServerSocket: " + e);
         }
         // shut down all managers
-        removeAllManagers(true);
+        removeAllManagers();
         // shut down executor
         executor.shutdownNow();
         // done stopping
@@ -377,19 +377,10 @@ public class CepticServer extends Thread implements RemovableManagers {
         return manager;
     }
 
-    protected List<IStreamManager> removeAllManagers(boolean blocking) {
+    protected List<IStreamManager> removeAllManagers() {
         List<IStreamManager> removedManagers = new ArrayList<>();
         for (UUID managerId : managers.keySet()) {
             removedManagers.add(removeManager(managerId));
-        }
-        // if blocking, wait to join manager thread
-        if (blocking) {
-            for (IStreamManager manager : removedManagers) {
-                if (manager instanceof StreamManager)
-                try {
-                    ((StreamManager) manager).join();
-                } catch (InterruptedException ignored) { }
-            }
         }
         return removedManagers;
     }

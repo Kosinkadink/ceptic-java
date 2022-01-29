@@ -30,9 +30,9 @@ import java.util.concurrent.TimeUnit;
 public class CepticLauncher {
 
 	public static void main(String[] args) throws EndpointManagerException {
-//		doServer();
+		doServer();
 //		doClient();
-		doClientBasic();
+//		doClientBasic();
 //		doClientBasicParallel();
 	}
 
@@ -140,7 +140,7 @@ public class CepticLauncher {
 				.secure(false)
 				.build();
 
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < 10000; i++) {
 			// create request
 			CepticRequest request = new CepticRequest("get", "localhost/");
 
@@ -149,7 +149,7 @@ public class CepticLauncher {
 				CepticResponse response = client.connect(request);
 				System.out.println(String.format("#%d", i+1) + "Request successful!");
 				System.out.printf("%s\n%s\n%s\n",
-						response.getStatusCode().getValueInt(),
+						response.getStatusCode().getValue(),
 						response.getHeaders().toJSONString(),
 						new String(response.getBody(), StandardCharsets.UTF_8));
 			} catch (CepticException exception) {
@@ -187,13 +187,12 @@ public class CepticLauncher {
 				System.out.println(String.format("Executing Request #%d",finalI+1));
 				// create request
 				CepticRequest request = new CepticRequest("get", "localhost/");
-
 				// try to connect to server
 				try {
 					CepticResponse response = client.connect(request);
 					System.out.println(String.format("#%d", finalI +1) + "Request successful!");
 					System.out.printf("%s\n%s\n%s\n",
-							response.getStatusCode().getValueInt(),
+							response.getStatusCode().getValue(),
 							response.getHeaders().toJSONString(),
 							new String(response.getBody(), StandardCharsets.UTF_8));
 				} catch (CepticException exception) {
@@ -232,7 +231,7 @@ public class CepticLauncher {
 			CepticResponse response = client.connect(request);
 			System.out.println("Request successful!");
 			System.out.printf("%s\n%s\n%s\n",
-					response.getStatusCode().getValueInt(),
+					response.getStatusCode().getValue(),
 					response.getHeaders().toJSONString(),
 					new String(response.getBody(), StandardCharsets.UTF_8));
 		} catch (CepticException exception) {
@@ -248,7 +247,7 @@ public class CepticLauncher {
 			CepticResponse response = client.connect(requestExchange);
 			System.out.println("Request successful!");
 			System.out.printf("%s\n%s\n%s\n",
-					response.getStatusCode().getValueInt(),
+					response.getStatusCode().getValue(),
 					response.getHeaders().toJSONString(),
 					new String(response.getBody(), StandardCharsets.UTF_8));
 			if (response.getExchange()) {
@@ -263,7 +262,7 @@ public class CepticLauncher {
 						hasReceivedResponse = true;
 						System.out.println("Received response; end of exchange!");
 						System.out.printf("%s\n%s\n%s\n",
-								data.getResponse().getStatusCode().getValueInt(),
+								data.getResponse().getStatusCode().getValue(),
 								data.getResponse().getHeaders().toJSONString(),
 								new String(data.getResponse().getBody(), StandardCharsets.UTF_8));
 						break;
@@ -285,7 +284,7 @@ public class CepticLauncher {
 					if (data.isResponse()) {
 						System.out.println("Received response after sending exit; end of exchange!");
 						System.out.printf("%s\n%s\n%s\n",
-								data.getResponse().getStatusCode().getValueInt(),
+								data.getResponse().getStatusCode().getValue(),
 								data.getResponse().getHeaders().toJSONString(),
 								new String(data.getResponse().getBody(), StandardCharsets.UTF_8));
 					}

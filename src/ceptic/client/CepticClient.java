@@ -71,11 +71,7 @@ public class CepticClient implements RemovableManagers {
 
     //region Stop
     public void stop() {
-        stop(true);
-    }
-
-    public List<StreamManager> stop(boolean blocking) {
-        return removeAllManagers(blocking);
+        removeAllManagers();
     }
     //endregion
 
@@ -122,7 +118,7 @@ public class CepticClient implements RemovableManagers {
         try {
             // create frames from request and send
             stream.sendRequest(request);
-            // wait for response (maybe return with LOCAL_ERROR?)
+            // wait for response
             StreamData streamData = stream.readData(stream.getSettings().frameMaxSize);
             if (!streamData.isResponse()) {
                 throw new StreamException("No CepticResponse found in response");
@@ -157,9 +153,8 @@ public class CepticClient implements RemovableManagers {
                 // receive body
                 response.setBody(stream.readDataRaw(response.getContentLength()));
             }
-            // TODO: add check for Exchange header on request as well
-            // close stream if no Exchange header
-            if (!response.getExchange()) {
+            // close stream if no Exchange header on response or request
+            if (!response.getExchange() || !request.getExchange()) {
                 stream.sendClose();
             }
             return response;
@@ -280,7 +275,7 @@ public class CepticClient implements RemovableManagers {
             for (UUID managerId : managerSet) {
                 StreamManager manager = getManager(managerId);
                 if (manager != null) {
-                    if (!manager.isHandlerLimitReached()) {
+                    if (!manager.isFullyStopped() && !manager.isHandlerLimitReached()) {
                         return manager;
                     }
                 }
@@ -318,21 +313,10 @@ public class CepticClient implements RemovableManagers {
         throw new NotImplementedException();
     }
 
-    protected List<StreamManager> removeAllManagers(boolean blocking) {
+    protected List<StreamManager> removeAllManagers() {
         List<StreamManager> removedManagers = new ArrayList<>();
         for (UUID managerId : managers.keySet()) {
             removedManagers.add(removeManager(managerId));
-        }
-        // if blocking, wait to join manager thread
-        if (blocking) {
-            for (StreamManager manager : removedManagers) {
-                while (true) {
-                    try {
-                        manager.join();
-                        break;
-                    } catch (InterruptedException ignored) { }
-                }
-            }
         }
         return removedManagers;
     }

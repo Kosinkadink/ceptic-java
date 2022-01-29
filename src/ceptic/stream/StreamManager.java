@@ -1,7 +1,7 @@
 package ceptic.stream;
 
 import ceptic.common.RemovableManagers;
-import ceptic.common.Timer;
+import ceptic.common.Stopwatch;
 import ceptic.net.SocketCeptic;
 import ceptic.net.exceptions.SocketCepticException;
 import ceptic.stream.exceptions.StreamException;
@@ -23,8 +23,8 @@ public class StreamManager extends Thread implements IStreamManager {
     private final RemovableManagers removable;
     private final boolean isServer;
 
-    private final Timer existenceTimer = new Timer();
-    private final Timer keepAliveTimer = new Timer();
+    private final Stopwatch existenceTimer = new Stopwatch();
+    private final Stopwatch keepAliveTimer = new Stopwatch();
     private boolean shouldStop = false;
     private boolean fullyStopped = false;
     private String stopReason = "";

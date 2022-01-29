@@ -2,12 +2,12 @@ package ceptic.common;
 
 import java.util.concurrent.TimeUnit;
 
-public class Timer {
+public class Stopwatch {
 
     private long startTime = 0;
     private long endTime = 0;
 
-    public Timer() {
+    public Stopwatch() {
 
     }
 

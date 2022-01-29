@@ -155,10 +155,16 @@ public class CepticRequest extends CepticHeaders {
     //endregion
 
     public StreamHandler beginExchange() {
-        CepticResponse response = new CepticResponse(CepticStatusCode.OK);
+        CepticResponse response = new CepticResponse(CepticStatusCode.EXCHANGE_START);
         response.setExchange(true);
         if (stream != null && !stream.isStopped()) {
             try {
+                if (!getExchange()) {
+                    stream.sendResponse(new CepticResponse(CepticStatusCode.MISSING_EXCHANGE));
+                    if (stream.getSettings().verbose)
+                        System.out.println("Request did not have required Exchange header");
+                    return null;
+                }
                 stream.sendResponse(response);
             } catch (StreamException e) {
                 if (stream.getSettings().verbose)

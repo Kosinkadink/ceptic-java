@@ -66,7 +66,7 @@ public class IntegrationCommandTests {
         CepticResponse response = client.connect(request);
         // Assert
         assertEquals(CepticStatusCode.OK, response.getStatusCode(), String.format("Expected %d, but was %d: %s",
-                CepticStatusCode.OK.getValueInt(), response.getStatusCode().getValueInt(), response.getErrors()));
+                CepticStatusCode.OK.getValue(), response.getStatusCode().getValue(), response.getErrors()));
         assertEquals(0, response.getBody().length,
                 String.format("Body should have been empty but had length %d", response.getBody().length));
     }
