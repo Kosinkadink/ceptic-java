@@ -35,6 +35,14 @@ public class CepticResponse extends CepticHeaders {
         this(statusCode, null, null, errors, null);
     }
 
+    public CepticResponse(CepticStatusCode statusCode, byte[] body, JSONObject headers) {
+        this(statusCode, body, headers, null, null);
+    }
+
+    public CepticResponse(CepticStatusCode statusCode, byte[] body) {
+        this(statusCode, body, null, null, null);
+    }
+
     public CepticResponse(CepticStatusCode statusCode) {
         this(statusCode, null, null, null, null);
     }

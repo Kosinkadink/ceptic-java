@@ -10,13 +10,19 @@ public class DataStreamFrameGeneratorIterator implements Iterator<StreamFrame> {
 
     private final DataStreamFrameGenerator generator;
     private int index = 0;
+    private boolean firstOrHasData;
 
     public DataStreamFrameGeneratorIterator(DataStreamFrameGenerator generator) {
         this.generator = generator;
+        firstOrHasData = generator.data.length != 0;
     }
 
     @Override
     public boolean hasNext() {
+        if (firstOrHasData) {
+            firstOrHasData = false;
+            return true;
+        }
         return generator.data.length-1 > index;
     }
 
