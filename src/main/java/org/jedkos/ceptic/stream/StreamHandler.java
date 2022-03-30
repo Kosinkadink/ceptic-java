@@ -255,6 +255,12 @@ public class StreamHandler {
         updateKeepAlive();
         // while not stopped, attempt to insert frame into buffer
         incrementReadBuffer(frame);
+        // if is a close frame, insert into buffer and stop handler
+        if (frame.isClose()) {
+            readBuffer.offerLast(frame);
+            stop();
+            return;
+        }
         while (!isStopped()) {
             try {
                 if (isReadBufferFull()) {

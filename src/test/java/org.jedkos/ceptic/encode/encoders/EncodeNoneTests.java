@@ -1,15 +1,15 @@
 package org.jedkos.ceptic.encode.encoders;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 
 class EncodeNoneTests {
 
     @Test
-    void encodeAndDecode() {
+    public void encodeAndDecode() {
         String input = "someTestString123!@#";
 
         EncodeNone encoder = new EncodeNone();
@@ -19,9 +19,9 @@ class EncodeNoneTests {
         String encodedString = new String(encoded, StandardCharsets.UTF_8);
         String output = new String(decoded, StandardCharsets.UTF_8);
 
-        assertEquals(input, output);
-        assertEquals(input, encodedString);
-        assertEquals(encoded, decoded);
+        assertThat(output).isEqualTo(input);
+        assertThat(encodedString).isEqualTo(input);
+        assertThat(decoded).isEqualTo(encoded);
     }
 
 }

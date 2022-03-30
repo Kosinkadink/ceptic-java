@@ -1,11 +1,11 @@
 package org.jedkos.ceptic.client;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class CepticClientTests {
 
     @Test
-    void createClient_Unsecure() {
+    public void createClient_Unsecure() {
         CepticClient client = new CepticClientBuilder()
                 .secure(false)
                 .build();

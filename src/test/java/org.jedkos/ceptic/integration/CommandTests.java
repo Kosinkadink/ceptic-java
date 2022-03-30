@@ -7,21 +7,21 @@ import org.jedkos.ceptic.endpoint.EndpointEntry;
 import org.jedkos.ceptic.helpers.CepticInitializers;
 import org.jedkos.ceptic.server.CepticServer;
 import org.jedkos.ceptic.stream.exceptions.StreamException;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
+import org.junit.After;
+import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 
-public class IntegrationCommandTests {
+public class CommandTests extends CepticInitializers {
 
     private CepticServer server;
     private CepticClient client;
 
-    @AfterEach
-    void afterEach() {
+    @After
+    public void afterEach() {
         if (server != null) {
             server.stopRunning();
             server = null;
@@ -33,10 +33,10 @@ public class IntegrationCommandTests {
     }
 
     @Test
-    void command_Unsecure_Success() throws CepticException {
+    public void command_Unsecure_Success() throws CepticException {
         // Arrange
-        CepticServer server = CepticInitializers.createUnsecureServer();
-        CepticClient client = CepticInitializers.createUnsecureClient();
+        server = createUnsecureServer();
+        client = createUnsecureClient();
 
         String command = CommandType.GET;
         String endpoint = "/";
@@ -50,18 +50,16 @@ public class IntegrationCommandTests {
         server.start();
         CepticResponse response = client.connect(request);
         // Assert
-        assertEquals(CepticStatusCode.OK, response.getStatusCode(), String.format("Expected %d, but was %d: %s",
-                CepticStatusCode.OK.getValue(), response.getStatusCode().getValue(), response.getErrors()));
-        assertEquals(0, response.getBody().length,
-                String.format("Body should have been empty but had length %d", response.getBody().length));
-        assertFalse(response.getExchange(), "Exchange header was true when expected false");
+        assertThat(response.getStatusCode()).isEqualTo(CepticStatusCode.OK);
+        assertThat(response.getBody()).hasSize(0);
+        assertThat(response.getExchange()).isFalse();
     }
 
     @Test
-    void command_Unsecure_1000_Success() throws CepticException {
+    public void command_Unsecure_1000_Success() throws CepticException {
         // Arrange
-        CepticServer server = CepticInitializers.createUnsecureServer();
-        CepticClient client = CepticInitializers.createUnsecureClient();
+        server = createUnsecureServer();
+        client = createUnsecureClient();
 
         String command = CommandType.GET;
         String endpoint = "/";
@@ -72,7 +70,6 @@ public class IntegrationCommandTests {
 
         server.addCommand(command);
         server.addRoute(command, endpoint, entry);
-        client.stop();
 
         // Act
         server.start();
@@ -86,9 +83,8 @@ public class IntegrationCommandTests {
                 stopwatch.stop();
                 System.out.println("Connection took " + stopwatch.getTimeDiffMillis() + " ms");
                 // Assert
-                assertEquals(CepticStatusCode.OK, response.getStatusCode(), String.format("Expected %d, but was %d: %s",
-                        CepticStatusCode.OK.getValue(), response.getStatusCode().getValue(), response.getErrors()));
-                assertFalse(response.getExchange(), "Exchange header was true when expected false");
+                assertThat(response.getStatusCode()).isEqualTo(CepticStatusCode.OK);
+                assertThat(response.getExchange()).isFalse();
             }
             catch (StreamException e) {
                 System.out.printf("Error thrown on iteration: %d,%s,%s%n", i, e.getClass().toString(), e.getMessage());
@@ -98,10 +94,10 @@ public class IntegrationCommandTests {
     }
 
     @Test
-    void command_Unsecure_EchoBody_Success() throws CepticException {
+    public void command_Unsecure_EchoBody_Success() throws CepticException {
         // Arrange
-        CepticServer server = CepticInitializers.createUnsecureServer();
-        CepticClient client = CepticInitializers.createUnsecureClient();
+        server = createUnsecureServer();
+        client = createUnsecureClient();
 
         String command = CommandType.GET;
         String endpoint = "/";
@@ -118,20 +114,19 @@ public class IntegrationCommandTests {
         server.start();
         CepticResponse response = client.connect(request);
         // Assert
-        assertEquals(CepticStatusCode.OK, response.getStatusCode(), String.format("Expected %d, but was %d: %s",
-                CepticStatusCode.OK.getValue(), response.getStatusCode().getValue(), response.getErrors()));
-        assertArrayEquals(expectedBody, response.getBody());
-        assertFalse(response.getExchange(), "Exchange header was true when expected false");
+        assertThat(response.getStatusCode()).isEqualTo(CepticStatusCode.OK);
+        assertThat(response.getBody()).isEqualTo(expectedBody);
+        assertThat(response.getExchange()).isFalse();
 
-        assertEquals(expectedBody.length, request.getContentLength());
-        assertEquals(expectedBody.length, response.getContentLength());
+        assertThat(request.getContentLength()).isEqualTo(expectedBody.length);
+        assertThat(response.getContentLength()).isEqualTo(expectedBody.length);
     }
 
     @Test
-    void command_Unsecure_EchoVariables_Success() throws CepticException {
+    public void command_Unsecure_EchoVariables_Success() throws CepticException {
         // Arrange
-        CepticServer server = CepticInitializers.createUnsecureServer();
-        CepticClient client = CepticInitializers.createUnsecureClient();
+        server = createUnsecureServer();
+        client = createUnsecureClient();
 
         String command = CommandType.GET;
         String variableName1 = "var1";
@@ -160,13 +155,12 @@ public class IntegrationCommandTests {
         server.start();
         CepticResponse response = client.connect(request);
         // Assert
-        assertEquals(CepticStatusCode.OK, response.getStatusCode(), String.format("Expected %d, but was %d: %s",
-                CepticStatusCode.OK.getValue(), response.getStatusCode().getValue(), response.getErrors()));
-        assertArrayEquals(expectedBody, response.getBody());
-        assertFalse(response.getExchange(), "Exchange header was true when expected false");
+        assertThat(response.getStatusCode()).isEqualTo(CepticStatusCode.OK);
+        assertThat(response.getBody()).isEqualTo(expectedBody);
+        assertThat(response.getExchange()).isFalse();
 
-        assertEquals(expectedBody.length, request.getContentLength());
-        assertEquals(expectedBody.length, response.getContentLength());
+        assertThat(request.getContentLength()).isEqualTo(expectedBody.length);
+        assertThat(response.getContentLength()).isEqualTo(expectedBody.length);
     }
 
 }

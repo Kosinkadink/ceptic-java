@@ -5,53 +5,51 @@ import org.jedkos.ceptic.common.CepticStatusCode;
 import org.jedkos.ceptic.endpoint.EndpointEntry;
 import org.jedkos.ceptic.endpoint.EndpointValue;
 import org.jedkos.ceptic.endpoint.exceptions.EndpointManagerException;
-import org.junit.jupiter.api.Test;
+import org.jedkos.ceptic.helpers.CepticInitializers;
+import org.junit.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 
-public class CepticServerTests {
-
-    private CepticServer createNonSecureServer() {
-        return new CepticServerBuilder()
-                .secure(false)
-                .build();
-    }
+public class CepticServerTests extends CepticInitializers {
 
     @Test
-    void createServer_Unsecure() {
+    public void createServer_Unsecure() {
         // Arrange
-        CepticServer server = createNonSecureServer();
+        CepticServer server = createUnsecureServer();
         // Act and Assert
         server.start();
         server.stopRunning();
     }
 
     @Test
-    void addCommand() {
+    public void addCommand() {
         // Arrange
-        CepticServer server = createNonSecureServer();
+        CepticServer server = createUnsecureServer();
         String command = "get";
         // Act
         server.addCommand(command);
         // Assert
-        assertNotNull(server.endpointManager.getCommand("get"),
-                "Command not added to server's endpointManager");
+        assertThat(server.endpointManager.getCommand("get"))
+                .overridingErrorMessage("Command not added to server's endpointManager")
+                .isNotNull();
     }
 
     @Test
-    void addRoute() throws EndpointManagerException {
+    public void addRoute() throws EndpointManagerException {
         // Arrange
-        CepticServer server = createNonSecureServer();
+        CepticServer server = createUnsecureServer();
         String command = "get";
         String endpoint = "/";
         EndpointEntry entry = (request, values) -> new CepticResponse(CepticStatusCode.OK);
         server.addCommand(command);
         // Act and Assert
-        assertDoesNotThrow(() -> server.addRoute(command, endpoint, entry), "Exception thrown for addRoute");
-        assertDoesNotThrow(() -> server.endpointManager.getEndpoint(command, endpoint),
-                "Endpoint erroneously does not exist");
+        assertThatNoException().isThrownBy(() -> server.addRoute(command, endpoint, entry));
+        assertThatNoException().isThrownBy(() -> server.endpointManager.getEndpoint(command, endpoint));
+
         EndpointValue value = server.endpointManager.getEndpoint(command, endpoint);
-        assertTrue(value.getValues().isEmpty(), "Variables were present when none expected for endpoint");
+        assertThat(value.getValues())
+                .overridingErrorMessage("Variables were present when none expected for endpoint")
+                .isEmpty();
     }
 
 }

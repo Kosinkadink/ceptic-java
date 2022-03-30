@@ -1,16 +1,19 @@
 package org.jedkos.ceptic.common;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class CepticRequestTests {
 
+    @Ignore
     @Test
-    void fromData() {
+    public void fromData() {
 
     }
 
+    @Ignore
     @Test
-    void getData() {
+    public void getData() {
 
     }
 

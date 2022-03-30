@@ -4,8 +4,8 @@ import org.jedkos.ceptic.common.CepticResponse;
 import org.jedkos.ceptic.common.CepticStatusCode;
 import org.jedkos.ceptic.endpoint.exceptions.EndpointManagerException;
 import org.jedkos.ceptic.server.ServerSettingsBuilder;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 
 public class EndpointManagerTests {
 
@@ -24,99 +24,98 @@ public class EndpointManagerTests {
     }
 
     //region Test Setup
-    @BeforeEach
-    void beforeEach() {
+    @Before
+    public void beforeEach() {
         manager = createEndpointManager();
     }
     //endregion
 
     @Test
-    void createManager_Success() {
+    public void createManager_Success() {
         // Arrange, Act, and Assert
-        assertDoesNotThrow(() -> new EndpointManager(new ServerSettingsBuilder().build()));
+        assertThatNoException().isThrownBy(() -> new EndpointManager(new ServerSettingsBuilder().build()));
     }
 
     @Test
-    void addCommand_Success() {
+    public void addCommand_Success() {
         // Arrange
         String command = "get";
         // Act
         manager.addCommand(command);
         // Assert
-        assertTrue(manager.commandMap.containsKey(command));
+        assertThat(manager.commandMap).containsKey(command);
     }
 
     @Test
-    void getCommand_Success() {
+    public void getCommand_Success() {
         // Arrange
         String command = "get";
         manager.addCommand("get");
         // Act and Assert
-        assertDoesNotThrow(() -> manager.getCommand(command), "Exception thrown when not expected");
+        assertThatNoException().isThrownBy(() -> manager.getCommand(command));
         CommandEntry entry = manager.getCommand(command);
-        assertNotNull(entry, "CommandEntry is not supposed to be null from manager.getCommand");
-        assertEquals(command, entry.getCommand(), "Command was not as expected");
+        assertThat(entry).isNotNull();
+        assertThat(entry.getCommand()).isEqualTo(command);
     }
 
     @Test
-    void getCommand_DoesNotExist_IsNull() {
+    public void getCommand_DoesNotExist_IsNull() {
         // Arrange
         manager.addCommand("get");
         // Act
         CommandEntry entry = manager.getCommand("post");
         // Assert
-        assertNull(entry, "CommandEntry is supposed to be null from manager.getCommand");
+        assertThat(entry).isNull();
     }
 
     @Test
-    void removeCommand_Success() {
+    public void removeCommand_Success() {
         // Arrange
         String command = "get";
         manager.addCommand(command);
         // Act
         CommandEntry entry = manager.removeCommand(command);
         // Assert
-        assertNotNull(entry, "CommandEntry is not supposed to be null from manager.removeCommand");
-        assertEquals(command, entry.getCommand(), "Command was not as expected");
-        assertTrue(manager.commandMap.isEmpty(), "Manager's commandMap was not empty");
+        assertThat(entry).isNotNull();
+        assertThat(entry.getCommand()).isEqualTo(command);
+        assertThat(manager.commandMap).isEmpty();
     }
 
     @Test
-    void removeCommand_DoesNotExist_IsNull() {
+    public void removeCommand_DoesNotExist_IsNull() {
         // Arrange and Act
         CommandEntry entry = manager.removeCommand("get");
         // Assert
-        assertNull(entry, "CommandEntry is supposed to be null from manager.removeCommand");
+        assertThat(entry).isNull();
     }
 
     @Test
-    void addEndpoint_Success() {
+    public void addEndpoint_Success() {
         // Arrange
         String command = "get";
         manager.addCommand(command);
         String endpoint = "/";
         EndpointEntry endpointEntry = (request, values) -> new CepticResponse(CepticStatusCode.OK);
         // Act and Assert
-        assertDoesNotThrow(() -> manager.addEndpoint(command, endpoint, endpointEntry));
+        assertThatNoException().isThrownBy(() -> manager.addEndpoint(command, endpoint, endpointEntry));
         CommandEntry commandEntry = manager.commandMap.get(command);
-        assertFalse(commandEntry.endpointMap.isEmpty(), "EndpointMap should not be empty");
-        assertEquals(endpointEntry, commandEntry.endpointMap.values().stream().findFirst().get().getEntry(),
-                "EndpointEntry not in endpointMap");
+        assertThat(commandEntry.endpointMap).isNotEmpty();
+        assertThat(commandEntry.endpointMap.values().stream().findFirst().get().getEntry()).isEqualTo(endpointEntry);
     }
 
     @Test
-    void addEndpoint_CommandDoesNotExist_ThrowsException() {
+    public void addEndpoint_CommandDoesNotExist_ThrowsException() {
         // Arrange
         String command = "get";
         String endpoint = "/";
         EndpointEntry endpointEntry = (request, values) -> new CepticResponse(CepticStatusCode.OK);
         // Act and Assert
-        assertThrows(EndpointManagerException.class, () -> manager.addEndpoint(command, endpoint, endpointEntry),
-                "Exception not thrown");
+        assertThatThrownBy(() -> manager.addEndpoint(command, endpoint, endpointEntry))
+                .isExactlyInstanceOf(EndpointManagerException.class);
     }
 
     @Test
-    void addEndpoint_GoodEndpoints_NoExceptions() {
+    public void addEndpoint_GoodEndpoints_NoExceptions() {
         // Arrange
         String command = "get";
         EndpointEntry endpointEntry = (request, values) -> new CepticResponse(CepticStatusCode.OK);
@@ -161,14 +160,13 @@ public class EndpointManagerTests {
         // Act and Assert
         for (String endpoint : endpoints) {
             manager.addCommand(command);
-            assertDoesNotThrow(() -> manager.addEndpoint(command, endpoint, endpointEntry),
-                    String.format("Exception thrown for endpoint '%s'", endpoint));
+            assertThatNoException().isThrownBy(() -> manager.addEndpoint(command, endpoint, endpointEntry));
             manager.removeCommand(command);
         }
     }
 
     @Test
-    void addEndpoint_BadEndpoints_ThrowException() throws EndpointManagerException {
+    public void addEndpoint_BadEndpoints_ThrowException() {
         // Arrange
         String command = "get";
         EndpointEntry endpointEntry = (request, values) -> new CepticResponse(CepticStatusCode.OK);
@@ -213,14 +211,14 @@ public class EndpointManagerTests {
         // Act and Assert
         for (String endpoint : endpoints) {
             manager.addCommand(command);
-            assertThrows(EndpointManagerException.class, () -> manager.addEndpoint(command, endpoint, endpointEntry),
-                    String.format("Exception not thrown for invalid endpoint '%s'", endpoint));
+            assertThatThrownBy(() -> manager.addEndpoint(command, endpoint, endpointEntry))
+                    .isExactlyInstanceOf(EndpointManagerException.class);
             manager.removeCommand(command);
         }
     }
 
     @Test
-    void addEndpoint_EquivalentEndpoints_ThrowException() throws EndpointManagerException {
+    public void addEndpoint_EquivalentEndpoints_ThrowException() throws EndpointManagerException {
         // Arrange
         String command = "get";
         manager.addCommand(command);
@@ -241,13 +239,13 @@ public class EndpointManagerTests {
 
         // Act and Assert
         for (String endpoint : endpoints) {
-            assertThrows(EndpointManagerException.class, () -> manager.addEndpoint(command, endpoint, endpointEntry),
-                    String.format("Exception not thrown for duplicate endpoint '%s'", endpoint));
+            assertThatThrownBy(() -> manager.addEndpoint(command, endpoint, endpointEntry))
+                    .isExactlyInstanceOf(EndpointManagerException.class);
         }
     }
 
     @Test
-    void getEndpoint() throws EndpointManagerException {
+    public void getEndpoint() throws EndpointManagerException {
         // Arrange
         String command = "get";
         String endpoint = "/";
@@ -256,17 +254,18 @@ public class EndpointManagerTests {
         manager.addEndpoint(command, endpoint, endpointEntry);
 
         // Act and Assert
-        assertDoesNotThrow(() -> manager.getEndpoint(command, endpoint), "Exception thrown when not expected");
+        assertThatNoException().isThrownBy(() -> manager.getEndpoint(command, endpoint));
+
         EndpointValue endpointValue = manager.getEndpoint(command, endpoint);
-        assertNotNull(endpointValue, "EndpointValue should not be null");
+        assertThat(endpointValue).isNotNull();
         // variable map should be empty
-        assertTrue(endpointValue.getValues().isEmpty(), "Variable values were not empty");
+        assertThat(endpointValue.getValues()).isEmpty();
         // entry should be the same as put in
-        assertEquals(endpointEntry, endpointValue.getEntry(), "EndpointEntry does not match");
+        assertThat(endpointValue.getEntry()).isEqualTo(endpointEntry);
     }
 
     @Test
-    void getEndpoint_WithVariables() throws EndpointManagerException {
+    public void getEndpoint_WithVariables() throws EndpointManagerException {
         // Arrange
         String command = "get";
         manager.addCommand(command);
@@ -304,28 +303,33 @@ public class EndpointManagerTests {
             // get endpoint
             EndpointValue endpointValue = manager.getEndpoint(command, endpointQuery);
             // Assert
-            assertNotNull(endpointValue, "EndpointValue should not be null");
+            assertThat(endpointValue).isNotNull();
             // returned values should have same count as template variables
-            assertEquals(variableMap.size(), endpointValue.getValues().size(),
-                    "Variable count did not match that of the template");
+            assertThat(endpointValue.getValues().size())
+                    .overridingErrorMessage("Variable count did not match that of the template")
+                    .isEqualTo(variableMap.size());
             for(Map.Entry<String,String> expectedEntry : variableMap.entrySet()) {
                 String variable = expectedEntry.getKey();
-                assertTrue(endpointValue.getValues().containsKey(variable),
-                        String.format("Expected variable '%s' not found", variable));
+                assertThat(endpointValue.getValues())
+                        .overridingErrorMessage(String.format("Expected variable '%s' not found", variable))
+                        .containsKey(variable);
                 String expectedValue = expectedEntry.getValue();
                 String actualValue = endpointValue.getValues().get(expectedEntry.getKey());
-                assertEquals(expectedValue, actualValue, String.format("Variable '%s' had value '%s' instead of '%s", variable, actualValue, expectedValue));
+                assertThat(actualValue)
+                        .overridingErrorMessage(String.format("Variable '%s' had value '%s' instead of '%s",
+                                variable, actualValue, expectedValue))
+                        .isEqualTo(expectedValue);
             }
         }
     }
 
     @Test
-    void getEndpoint_GoodEndpoints_NoExceptions() {
+    public void getEndpoint_GoodEndpoints_NoExceptions() {
 
     }
 
     @Test
-    void getEndpoint_BadEndpoints_ThrowException() {
+    public void getEndpoint_BadEndpoints_ThrowException() {
         // Arrange
         String command = "get";
         manager.addCommand(command);
@@ -335,7 +339,7 @@ public class EndpointManagerTests {
     }
 
     @Test
-    void getEndpoint_DoesNotExist_ThrowException() {
+    public void getEndpoint_DoesNotExist_ThrowException() {
         // Arrange
         String command = "get";
         manager.addCommand(command);
@@ -352,20 +356,20 @@ public class EndpointManagerTests {
 
         // Act and Assert
         for (String endpoint : endpoints) {
-            assertThrows(EndpointManagerException.class, () -> manager.getEndpoint(command, endpoint),
-                    String.format("Exception not thrown for non-existent endpoint '%s'", endpoint));
+            assertThatThrownBy(() -> manager.getEndpoint(command, endpoint))
+                    .isExactlyInstanceOf(EndpointManagerException.class);
         }
     }
 
     @Test
-    void getEndpoint_CommandDoesNotExist_ThrowException() {
+    public void getEndpoint_CommandDoesNotExist_ThrowException() {
         // Arrange, Act, and Assert
-        assertThrows(EndpointManagerException.class, () -> manager.getEndpoint("get", "/"),
-                "Exception not thrown for non-existent command's endpoint");
+        assertThatThrownBy(() -> manager.getEndpoint("get", "/"))
+                .isExactlyInstanceOf(EndpointManagerException.class);
     }
 
     @Test
-    void removeEndpoint() throws EndpointManagerException {
+    public void removeEndpoint() throws EndpointManagerException {
         // Arrange
         String command = "get";
         String endpoint = "/";
@@ -374,8 +378,8 @@ public class EndpointManagerTests {
         manager.addEndpoint(command, endpoint, endpointEntry);
         // Act and Assert
         EndpointSaved saved = manager.removeEndpoint(command, endpoint);
-        assertNotNull(saved, "EndpointSaved should not be null for valid endpoint from removeEndpoint");
-        assertEquals(endpointEntry, saved.getEntry(), "EndpointEntry does not match");
+        assertThat(saved).isNotNull();
+        assertThat(saved.getEntry()).isEqualTo(endpointEntry);
     }
 
 }
