@@ -10,6 +10,7 @@ import org.jedkos.ceptic.common.CommandType;
 import org.jedkos.ceptic.common.exceptions.CepticException;
 import org.jedkos.ceptic.endpoint.EndpointEntry;
 import org.jedkos.ceptic.endpoint.exceptions.EndpointManagerException;
+import org.jedkos.ceptic.security.SecuritySettings;
 import org.jedkos.ceptic.security.exceptions.SecurityException;
 import org.jedkos.ceptic.server.CepticServer;
 import org.jedkos.ceptic.server.ServerSettings;
@@ -42,7 +43,7 @@ public class CepticLauncher {
 				.daemon(false)
 				.build();
 
-		CepticServer server = new CepticServer(settings, null);
+		CepticServer server = new CepticServer(settings, SecuritySettings.ServerUnsecure());
 
 		/*CepticServer server = new CepticServerBuilder()
 				.secure(false)
@@ -58,59 +59,56 @@ public class CepticLauncher {
 			}
 		});
 
-		server.addRoute(CommandType.GET, "/exchange", new EndpointEntry() {
-			@Override
-			public CepticResponse perform(CepticRequest request, HashMap<String, String> values) {
-				StreamHandler stream = request.beginExchange();
-				if (stream == null) {
-					return new CepticResponse(CepticStatusCode.BAD_REQUEST);
-				}
-				try {
-					String previousData = "";
-					int count = 0;
-					while (true) {
-						StreamData streamData = stream.readData(100);
-						if (!streamData.isData() && !streamData.isResponse())
-							continue;
-						//if (streamData.isData() && streamData.getData().length == 0)
-						//	continue;
-						count++;
+		server.addRoute(CommandType.GET, "/exchange", (request, values) -> {
+			StreamHandler stream = request.beginExchange();
+			if (stream == null) {
+				return new CepticResponse(CepticStatusCode.BAD_REQUEST);
+			}
+			try {
+				String previousData = "";
+				int count = 0;
+				while (true) {
+					StreamData streamData = stream.readData(100);
+					if (!streamData.isData() && !streamData.isResponse())
+						continue;
+					//if (streamData.isData() && streamData.getData().length == 0)
+					//	continue;
+					count++;
 //						try {
 //							Thread.sleep(10);
 //						} catch (InterruptedException e) {
 //							e.printStackTrace();
 //						}
-						//System.out.println(streamData.getData());
-						String data;
-						try {
-							data = new String(streamData.getData(), StandardCharsets.UTF_8);
-							previousData = data;
-						} catch (NullPointerException e) {
-							System.out.printf("Caught NPE for following data (previous was %s):", previousData);
-							System.out.println("isData: " + streamData.isData());
-							System.out.println("isResponse: " + streamData.isResponse());
-							if (streamData.isData()) {
-								System.out.println(streamData.getData().length);
-							}
-							if (streamData.isResponse()) {
-								System.out.println(new String(streamData.getResponse().getData(), StandardCharsets.UTF_8));
-							}
-							throw e;
+					//System.out.println(streamData.getData());
+					String data;
+					try {
+						data = new String(streamData.getData(), StandardCharsets.UTF_8);
+						previousData = data;
+					} catch (NullPointerException e) {
+						System.out.printf("Caught NPE for following data (previous was %s):", previousData);
+						System.out.println("isData: " + streamData.isData());
+						System.out.println("isResponse: " + streamData.isResponse());
+						if (streamData.isData()) {
+							System.out.println(streamData.getData().length);
 						}
-						if (count % 500 == 0)
-							System.out.println("DATA: " + data);
-						if (data.equals("exit")) {
-							System.out.println("Client requested end of exchange!");
-							break;
-						} else {
-							stream.sendData(streamData.getData());
+						if (streamData.isResponse()) {
+							System.out.println(new String(streamData.getResponse().getData(), StandardCharsets.UTF_8));
 						}
+						throw e;
 					}
-				} catch (StreamException e) {
-					System.out.println("StreamException: " + e);
+					if (count % 500 == 0)
+						System.out.println("DATA: " + data);
+					if (data.equals("exit")) {
+						System.out.println("Client requested end of exchange!");
+						break;
+					} else {
+						stream.sendData(streamData.getData());
+					}
 				}
-				return new CepticResponse(CepticStatusCode.OK);
+			} catch (StreamException e) {
+				System.out.println("StreamException: " + e);
 			}
+			return new CepticResponse(CepticStatusCode.OK);
 		});
 
 		server.start();
@@ -140,9 +138,9 @@ public class CepticLauncher {
 		// create client settings
 		ClientSettings settings = new ClientSettingsBuilder().build();
 		// create client
-		CepticClient client = new CepticClient(settings, null);
+		CepticClient client = new CepticClient(settings, SecuritySettings.ClientUnsecure());
 
-		for (int i = 0; i < 10000; i++) {
+		for (int i = 0; i < 1; i++) {
 			// create request
 			CepticRequest request = new CepticRequest("get", "localhost/");
 
@@ -167,7 +165,7 @@ public class CepticLauncher {
 		ClientSettings settings = new ClientSettingsBuilder()
 				.build();
 		// create client
-		CepticClient client = new CepticClient(settings, null);
+		CepticClient client = new CepticClient(settings, SecuritySettings.ClientUnsecure());
 
 		ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 
@@ -216,7 +214,7 @@ public class CepticLauncher {
 		ClientSettings settings = new ClientSettingsBuilder()
 				.build();
 		// create client
-		CepticClient client = new CepticClient(settings, null);
+		CepticClient client = new CepticClient(settings, SecuritySettings.ClientUnsecure());
 		// create request
 		CepticRequest request = new CepticRequest("streamget", "localhost");
 
@@ -235,6 +233,7 @@ public class CepticLauncher {
 
 		// create exchange request
 		CepticRequest requestExchange = new CepticRequest(CommandType.GET, "localhost/exchange");
+		requestExchange.setExchange(true);
 		// try to connect to server
 		try {
 			ArrayList<byte[]> allData = new ArrayList<>();

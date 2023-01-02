@@ -311,7 +311,6 @@ public class CepticServer extends Thread implements RemovableManagers {
     protected void createNewManager(Socket rawSocket) throws SocketCepticException {
         if (settings.verbose)
             System.out.println("Got a connection from " + rawSocket.getRemoteSocketAddress());
-        // TODO: wrap with SSL to get SSLSocket
         // wrap as SocketCeptic
         SocketCeptic socket = new SocketCeptic(rawSocket);
 
@@ -379,7 +378,7 @@ public class CepticServer extends Thread implements RemovableManagers {
         // if errors present, send negative response with explanation
         if (errors.length() > 0 || streamSettings == null) {
             socket.sendRaw("n");
-            socket.send(errors.substring(0, Math.max(1024, errors.length())));
+            socket.send(errors.substring(0, Math.min(1024, errors.length())));
             if (settings.verbose)
                 System.out.println("Client not compatible with server settings, connection terminated.");
             socket.close();
