@@ -8,4 +8,8 @@ public class UnknownEncodingException extends CepticException {
         super(message);
     }
 
+    public UnknownEncodingException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }

@@ -1,7 +1,6 @@
 package org.jedkos.ceptic;
 
 import org.jedkos.ceptic.client.CepticClient;
-import org.jedkos.ceptic.client.CepticClientBuilder;
 import org.jedkos.ceptic.client.ClientSettings;
 import org.jedkos.ceptic.client.ClientSettingsBuilder;
 import org.jedkos.ceptic.common.CepticRequest;
@@ -11,8 +10,8 @@ import org.jedkos.ceptic.common.CommandType;
 import org.jedkos.ceptic.common.exceptions.CepticException;
 import org.jedkos.ceptic.endpoint.EndpointEntry;
 import org.jedkos.ceptic.endpoint.exceptions.EndpointManagerException;
+import org.jedkos.ceptic.security.exceptions.SecurityException;
 import org.jedkos.ceptic.server.CepticServer;
-import org.jedkos.ceptic.server.CepticServerBuilder;
 import org.jedkos.ceptic.server.ServerSettings;
 import org.jedkos.ceptic.server.ServerSettingsBuilder;
 import org.jedkos.ceptic.stream.StreamData;
@@ -29,24 +28,26 @@ import java.util.concurrent.TimeUnit;
 
 public class CepticLauncher {
 
-	public static void main(String[] args) throws EndpointManagerException {
+	public static void main(String[] args) throws EndpointManagerException, SecurityException {
 		doServer();
 //		doClient();
 //		doClientBasic();
 //		doClientBasicParallel();
 	}
 
-	private static void doServer() throws EndpointManagerException {
+	private static void doServer() throws EndpointManagerException, SecurityException {
 		// create server settings
 		ServerSettings settings = new ServerSettingsBuilder()
 				.verbose(true)
 				.daemon(false)
 				.build();
 
-		CepticServer server = new CepticServerBuilder()
+		CepticServer server = new CepticServer(settings, null);
+
+		/*CepticServer server = new CepticServerBuilder()
 				.secure(false)
 				.settings(settings)
-				.build();
+				.build();*/
 
 		server.addCommand(CommandType.GET);
 
@@ -118,8 +119,14 @@ public class CepticLauncher {
 		Thread thread = new Thread(){
 			public void run(){
 				System.out.println("Thread Running");
-				doClient();
-				System.out.println("Thread Done Running");
+				try {
+					doClient();
+				} catch (SecurityException e) {
+					throw new RuntimeException(e);
+				}
+				finally {
+					System.out.println("Thread Done Running");
+				}
 			}
 		};
 		//thread.start();
@@ -129,16 +136,11 @@ public class CepticLauncher {
 		System.out.println("Server has stopped");
 	}
 
-	private static void doClientBasic() {
+	private static void doClientBasic() throws SecurityException {
 		// create client settings
-		ClientSettings settings = new ClientSettingsBuilder()
-				.build();
+		ClientSettings settings = new ClientSettingsBuilder().build();
 		// create client
-		CepticClient client = new CepticClientBuilder()
-				.settings(settings)
-				.checkHostname(false)
-				.secure(false)
-				.build();
+		CepticClient client = new CepticClient(settings, null);
 
 		for (int i = 0; i < 10000; i++) {
 			// create request
@@ -160,16 +162,12 @@ public class CepticLauncher {
 		client.stop();
 	}
 
-	private static void doClientBasicParallel() {
+	private static void doClientBasicParallel() throws SecurityException {
 		// create client settings
 		ClientSettings settings = new ClientSettingsBuilder()
 				.build();
 		// create client
-		CepticClient client = new CepticClientBuilder()
-				.settings(settings)
-				.checkHostname(false)
-				.secure(false)
-				.build();
+		CepticClient client = new CepticClient(settings, null);
 
 		ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 
@@ -213,16 +211,12 @@ public class CepticLauncher {
 		executor.shutdownNow();
 	}
 
-	private static void doClient() {
+	private static void doClient() throws SecurityException {
 		// create client settings
 		ClientSettings settings = new ClientSettingsBuilder()
 				.build();
 		// create client
-		CepticClient client = new CepticClientBuilder()
-				.settings(settings)
-				.checkHostname(false)
-				.secure(false)
-				.build();
+		CepticClient client = new CepticClient(settings, null);
 		// create request
 		CepticRequest request = new CepticRequest("streamget", "localhost");
 

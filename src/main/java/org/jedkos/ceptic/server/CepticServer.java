@@ -10,6 +10,9 @@ import org.jedkos.ceptic.endpoint.EndpointValue;
 import org.jedkos.ceptic.endpoint.exceptions.EndpointManagerException;
 import org.jedkos.ceptic.net.SocketCeptic;
 import org.jedkos.ceptic.net.exceptions.SocketCepticException;
+import org.jedkos.ceptic.security.CertificateHelper;
+import org.jedkos.ceptic.security.SecuritySettings;
+import org.jedkos.ceptic.security.exceptions.SecurityException;
 import org.jedkos.ceptic.stream.IStreamManager;
 import org.jedkos.ceptic.stream.StreamHandler;
 import org.jedkos.ceptic.stream.StreamManager;
@@ -18,9 +21,14 @@ import org.jedkos.ceptic.stream.exceptions.StreamException;
 import org.jedkos.ceptic.stream.exceptions.StreamTotalDataSizeException;
 import org.json.simple.JSONArray;
 
+import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -31,10 +39,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 public class CepticServer extends Thread implements RemovableManagers {
 
     protected final ServerSettings settings;
-    private final String certFile;
-    private final String keyFile;
-    private final String caFile;
-    private final boolean secure;
+    protected final SecuritySettings security;
+    protected SSLContext sslContext = null;
 
     private ServerSocket serverSocket;
 
@@ -47,14 +53,16 @@ public class CepticServer extends Thread implements RemovableManagers {
 
     protected final ThreadPoolExecutor executor;
 
-    protected CepticServer(ServerSettings settings, String certFile, String keyFile, String caFile, boolean secure) {
-        this.settings = settings;
-        this.certFile = certFile;
-        this.keyFile = keyFile;
-        this.caFile = caFile;
-        this.secure = secure;
+    public CepticServer(SecuritySettings security) throws SecurityException {
+        this(null, security);
+    }
+
+    public CepticServer(ServerSettings settings, SecuritySettings security) throws SecurityException {
+        this.settings = (settings != null) ? settings : new ServerSettingsBuilder().build();
+        this.security = security;
+        SetupSecurity();
         // set daemon based on settings
-        setDaemon(settings.daemon);
+        setDaemon(this.settings.daemon);
         // create executor
         executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         // create endpoint manager
@@ -66,20 +74,43 @@ public class CepticServer extends Thread implements RemovableManagers {
         return settings;
     }
 
-    public String getCertFile() {
-        return certFile;
-    }
-
-    public String getKeyFile() {
-        return keyFile;
-    }
-
-    public String getCaFile() {
-        return caFile;
-    }
-
     public boolean isSecure() {
-        return secure;
+        return security.isSecure();
+    }
+    //endregion
+
+    //region Security
+    protected void SetupSecurity() throws SecurityException {
+        if (security.isSecure()) {
+            KeyManager[] km = null;
+            TrustManager[] tm = null;
+            // make sure LocalCert is present
+            if (security.getLocalCert() == null)
+                throw new SecurityException("Required LocalCert missing.");
+            // if no LocalKey, then assume LocalCert contains both certificate and key
+            if (security.getLocalKey() == null) {
+                // try to load server certificate + key from combined file
+                km = CertificateHelper.generateFromCombined(security.getLocalCert(), security.getKeyPassword()).getKeyManagers();
+            }
+            // otherwise, assume LocalCert contains certificate and LocalKey contains key
+            else {
+                // try to load server certificate + key from separate files
+                km = CertificateHelper.generateFromSeparate(security.getLocalCert(), security.getLocalKey(), security.getKeyPassword()).getKeyManagers();
+            }
+
+            // if RemoteCert present, try to load client certificate
+            if (security.getRemoteCert() != null) {
+                tm = CertificateHelper.loadTrustManager(security.getRemoteCert()).getTrustManagers();
+            }
+
+            try {
+                SSLContext context = SSLContext.getInstance("TLSv1.2");
+                context.init(km, tm, SecureRandom.getInstanceStrong());
+                sslContext = context;
+            } catch (NoSuchAlgorithmException | KeyManagementException e) {
+                throw new SecurityException(MessageFormat.format("Error creating SSLContext: {0}", e), e);
+            }
+        }
     }
     //endregion
 
@@ -87,10 +118,16 @@ public class CepticServer extends Thread implements RemovableManagers {
     public void run() {
         if (settings.verbose)
             System.out.printf("ceptic server started - version %s on port %d (secure: %b)\n",
-                    settings.version, settings.port, secure);
+                    settings.version, settings.port, security.isSecure());
         // create server socket
         try {
-            serverSocket = new ServerSocket(settings.port, settings.requestQueueSize);
+            if (sslContext != null) {
+                serverSocket = sslContext.getServerSocketFactory()
+                        .createServerSocket(settings.port, settings.requestQueueSize);
+            }
+            else {
+                serverSocket = new ServerSocket(settings.port, settings.requestQueueSize);
+            }
         } catch (IOException e) {
             if (settings.verbose)
                 System.out.println("Issue creating ServerSocket: " + e);
@@ -134,9 +171,13 @@ public class CepticServer extends Thread implements RemovableManagers {
             executor.execute(() -> {
                 try {
                     createNewManager(socket);
-                } catch (SocketCepticException e) {
+                }
+                catch (Exception e) {
                     if (settings.verbose)
                         System.out.println("Issue with createNewManager: " + e);
+                    try {
+                        socket.close();
+                    } catch (IOException ignored) { }
                 }
             });
         }

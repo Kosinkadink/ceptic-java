@@ -1,21 +1,27 @@
 package org.jedkos.ceptic.client;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jedkos.ceptic.common.*;
 import org.jedkos.ceptic.common.exceptions.CepticException;
 import org.jedkos.ceptic.common.exceptions.CepticIOException;
 import org.jedkos.ceptic.encode.exceptions.UnknownEncodingException;
 import org.jedkos.ceptic.net.SocketCeptic;
 import org.jedkos.ceptic.net.exceptions.SocketCepticException;
+import org.jedkos.ceptic.security.CertificateHelper;
+import org.jedkos.ceptic.security.SecuritySettings;
+import org.jedkos.ceptic.security.exceptions.SecurityException;
 import org.jedkos.ceptic.stream.StreamData;
 import org.jedkos.ceptic.stream.StreamHandler;
 import org.jedkos.ceptic.stream.StreamManager;
 import org.jedkos.ceptic.stream.StreamSettings;
 import org.jedkos.ceptic.stream.exceptions.StreamException;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
+import java.security.*;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -23,24 +29,25 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CepticClient implements RemovableManagers {
 
-    private final ClientSettings settings;
-    private final String certFile;
-    private final String keyFile;
-    private final String caFile;
-    private final boolean checkHostname;
-    private final boolean secure;
+    protected final ClientSettings settings;
+    protected final SecuritySettings security;
+    protected SSLContext sslContext = null;
 
     private final ConcurrentHashMap<UUID, StreamManager> managers = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, ConcurrentHashMap.KeySetView<UUID,Boolean>> destinationMap = new ConcurrentHashMap<>();
 
-    protected CepticClient(ClientSettings settings, String certFile, String keyFile, String caFile,
-                           boolean checkHostname, boolean secure) {
-        this.settings = settings;
-        this.certFile = certFile;
-        this.keyFile = keyFile;
-        this.caFile = caFile;
-        this.checkHostname = checkHostname;
-        this.secure = secure;
+    public CepticClient() throws SecurityException {
+        this(null, null);
+    }
+
+    public CepticClient(SecuritySettings security) throws SecurityException {
+        this(null, security);
+    }
+
+    public CepticClient(ClientSettings settings, SecuritySettings security) throws SecurityException {
+        this.settings = (settings != null) ? settings : new ClientSettingsBuilder().build();
+        this.security = (security != null) ? security : SecuritySettings.Client();
+        SetupSecurity();
     }
 
     //region Getters
@@ -48,24 +55,47 @@ public class CepticClient implements RemovableManagers {
         return settings;
     }
 
-    public String getCertFile() {
-        return certFile;
-    }
-
-    public String getKeyFile() {
-        return keyFile;
-    }
-
-    public String getCaFile() {
-        return caFile;
-    }
-
-    public boolean isCheckHostname() {
-        return checkHostname;
+    public boolean isVerifyRemote() {
+        return security.isVerifyRemote();
     }
 
     public boolean isSecure() {
-        return secure;
+        return security.isSecure();
+    }
+    //endregion
+
+    //region Security
+    protected void SetupSecurity() throws SecurityException {
+        if (security.isSecure()) {
+            KeyManager[] km = null;
+            TrustManager[] tm = null;
+            // if LocalCert is present, attempt to load client cert and key
+            if (security.getLocalCert() != null) {
+                // if no LocalKey, then assume LocalCert combines both certificate and key
+                if (security.getLocalKey() == null) {
+                    // try to load client certificate + key from combined file
+                    km = CertificateHelper.generateFromCombined(security.getLocalCert(), security.getKeyPassword()).getKeyManagers();
+                }
+                // otherwise, assume LocalCert contains certificate and LocalKey contains key
+                else {
+                    // try to load client certificate + key from separate files
+                    km = CertificateHelper.generateFromSeparate(security.getLocalCert(), security.getLocalKey(), security.getKeyPassword()).getKeyManagers();
+                }
+            }
+
+            // if RemoteCert is present, attempt to load server cert
+            if (security.getRemoteCert() != null) {
+                tm = CertificateHelper.loadTrustManager(security.getRemoteCert()).getTrustManagers();
+            }
+
+            try {
+                SSLContext context = SSLContext.getInstance("TLSv1.2");
+                context.init(km, tm, new SecureRandom());
+                sslContext = context;
+            } catch (NoSuchAlgorithmException | KeyManagementException e) {
+                throw new SecurityException(MessageFormat.format("Error creating SSLContext: {0}", e), e);
+            }
+        }
     }
     //endregion
 
@@ -170,8 +200,15 @@ public class CepticClient implements RemovableManagers {
     protected StreamManager createNewManager(CepticRequest request, String destination) throws CepticIOException, SocketCepticException {
         Socket rawSocket;
         try {
-            // TODO: replace with SSLSocket
-            rawSocket = new Socket(request.getHost(), request.getPort());
+            // use SSLSocket if sslContext exists
+            if (sslContext != null) {
+                SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+                rawSocket = sslSocketFactory.createSocket(request.getHost(), request.getPort());
+
+            }
+            else {
+                rawSocket = new Socket(request.getHost(), request.getPort());
+            }
         } catch (IOException e) {
             throw new CepticIOException("Issue creating raw Socket: " + e);
         }
@@ -310,7 +347,7 @@ public class CepticClient implements RemovableManagers {
 
     @Override
     public void handleNewConnection(StreamHandler stream) {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 
     protected List<StreamManager> removeAllManagers() {

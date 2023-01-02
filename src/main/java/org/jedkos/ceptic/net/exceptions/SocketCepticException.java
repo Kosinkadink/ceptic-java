@@ -8,4 +8,8 @@ public class SocketCepticException extends CepticException {
         super(message);
     }
 
+    public SocketCepticException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }

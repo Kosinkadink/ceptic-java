@@ -6,4 +6,8 @@ public class CepticException extends Exception {
         super(message);
     }
 
+    public CepticException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }

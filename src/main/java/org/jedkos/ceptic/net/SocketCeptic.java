@@ -18,52 +18,26 @@ import java.security.spec.InvalidKeySpecException;
 
 public class SocketCeptic {
 	private final Socket s;
-	private InputStream sin;
-	private OutputStream sout;
-	
-	/*public SocketCeptic(String host, int port, ResourceCreator rc) throws UnknownHostException, IOException {
-		//initialize socket
-		this.host = host;
-		this.port = port;
-		this.rc = rc;
-		try {
-			createSocket();
-		} catch (KeyManagementException | UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException
-				| CertificateException | InvalidKeySpecException e) {
-			e.printStackTrace();
-			throw new RuntimeException("SocketTem could not be initialized");
-		}
-	}*/
+	private final InputStream sin;
+	private final OutputStream sout;
 
 	public SocketCeptic(Socket socket) throws SocketCepticException {
 		s = socket;
 		try {
 			sin = s.getInputStream();
 		} catch (IOException e) {
-			throw new SocketCepticException("Issue getting Socket input stream: " + e);
+			throw new SocketCepticException("Issue getting Socket input stream: " + e, e);
 		}
 		try {
 			sout = s.getOutputStream();
 		} catch (IOException e) {
-			throw new SocketCepticException("Issue getting Socket output stream: " + e);
+			throw new SocketCepticException("Issue getting Socket output stream: " + e, e);
 		}
 		try {
 			s.setTcpNoDelay(true);
 		} catch (SocketException e) {
-			throw new SocketCepticException("Issue setting TcpNoDelay: " + e);
+			throw new SocketCepticException("Issue setting TcpNoDelay: " + e, e);
 		}
-	}
-
-	public SocketCeptic wrapSocket() {
-		return null;
-	}
-	
-	public void createSocket() throws UnknownHostException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, InvalidKeySpecException {
-		//s = new Socket(host,port);
-		//s = rc.createSSLContext().getSocketFactory().createSocket(host,port);
-		sin = s.getInputStream();
-		sout = s.getOutputStream();
-		s.setTcpNoDelay(true);
 	}
 
 	//region Send
@@ -85,7 +59,7 @@ public class SocketCeptic {
 			sout.write(msg);
 		}
 		catch (IOException e) {
-			throw new SocketCepticException(e.toString());
+			throw new SocketCepticException(e.toString(), e);
 		}
 	}
 
@@ -105,7 +79,7 @@ public class SocketCeptic {
 				charCount = sin.read(byteBuffer,charCount,bytes-totalCount);
 			}
 			catch (IOException e) {
-				throw new SocketCepticException(e.toString());
+				throw new SocketCepticException(e.toString(), e);
 			}
 			totalCount += charCount;
 			if (charCount == 0) {
@@ -124,7 +98,12 @@ public class SocketCeptic {
 		// get length of bytes
 		sizeBuffer = recvRaw(16);
 		//int sizeToRecv = Integer.parseInt(new String(sizeBuffer).replaceAll("\\D", ""));
-		int sizeToRecv = Integer.parseInt(new String(sizeBuffer));
+		int sizeToRecv;
+		try {
+			sizeToRecv = Integer.parseInt(new String(sizeBuffer));
+		} catch (NumberFormatException e) {
+			throw new SocketCepticException("Size to receive could not be parsed", e);
+		}
 		int amount = bytes;
 		if (sizeToRecv < amount) {
 			amount = sizeToRecv;
@@ -146,7 +125,7 @@ public class SocketCeptic {
 			s.close();
 		}
 		catch (IOException e) {
-			throw new SocketCepticException(e.toString());
+			throw new SocketCepticException(e.toString(), e);
 		}
 	}
 	

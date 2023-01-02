@@ -6,4 +6,8 @@ public class EndpointManagerException extends CepticException {
     public EndpointManagerException(String message) {
         super(message);
     }
+
+    public EndpointManagerException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
